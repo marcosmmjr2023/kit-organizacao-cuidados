@@ -1,60 +1,98 @@
-(() => {
-  "use strict";
+import {
+  INTERNAL_KEY,
+  classifySource,
+  isLikelyBot,
+  isNewSession,
+  trackingMode,
+} from "./analytics-core.mjs";
 
-  const namespace = "kit-cuidados-prod-b1e57bac";
-  const base = `https://api.counterapi.dev/v1/${namespace}`;
-  const params = new URLSearchParams(window.location.search);
-  const testPrefix = params.get("analytics_test") === "1" ? "test-" : "";
+const namespace = "kit-cuidados-prod-b1e57bac";
+const base = `https://api.counterapi.dev/v1/${namespace}`;
+const params = new URLSearchParams(window.location.search);
 
-  function increment(eventName) {
-    const safeName = `${testPrefix}${eventName}`.replace(/[^a-z0-9-]/g, "-");
-    return fetch(`${base}/${safeName}/up`, {
-      method: "GET",
-      mode: "cors",
-      cache: "no-store",
-      keepalive: true,
-      credentials: "omit",
-      referrerPolicy: "strict-origin-when-cross-origin",
-    }).catch(() => null);
+function readLocal(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (_) {
+    return null;
   }
+}
 
+function writeLocal(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function removeLocal(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+if (params.get("analytics_internal") === "1") writeLocal(INTERNAL_KEY, "1");
+if (params.get("analytics_internal") === "0") removeLocal(INTERNAL_KEY);
+
+const mode = trackingMode(params, readLocal(INTERNAL_KEY) === "1");
+const bot = mode !== "test" && isLikelyBot({
+  webdriver: navigator.webdriver,
+  userAgent: navigator.userAgent,
+});
+const shouldTrack = mode === "test" || (mode === "production" && !bot);
+const eventPrefix = mode === "test" ? "test-v2-" : "v2-";
+
+function increment(eventName) {
+  if (!shouldTrack) return Promise.resolve(null);
+  const safeName = `${eventPrefix}${eventName}`.replace(/[^a-z0-9-]/g, "-");
+  return fetch(`${base}/${safeName}/up`, {
+    method: "GET",
+    mode: "cors",
+    cache: "no-store",
+    keepalive: true,
+    credentials: "omit",
+    referrerPolicy: "strict-origin-when-cross-origin",
+  }).catch(() => null);
+}
+
+if (shouldTrack) {
   increment("page-view");
 
-  const campaignSource = (params.get("utm_source") || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 40);
-  if (campaignSource) {
-    increment(`source-${campaignSource}`);
-    if (campaignSource !== "conteudo") increment("external-view");
-  } else if (document.referrer) {
-    try {
-      if (new URL(document.referrer).origin !== window.location.origin) {
-        increment("source-external-referral");
-        increment("external-view");
-      }
-    } catch (_) {
-      // Referrers inválidos são ignorados; nenhuma URL completa é enviada.
-    }
-  }
+  const storageSuffix = mode === "test" ? "test" : "prod";
+  const uniqueKey = `kit-cuidados-v2-unique-${storageSuffix}`;
+  if (!readLocal(uniqueKey) && writeLocal(uniqueKey, "1")) increment("unique-browser");
 
-  try {
-    const visitorKey = `kit-cuidados-visitor-${testPrefix || "prod"}`;
-    if (!localStorage.getItem(visitorKey)) {
-      localStorage.setItem(visitorKey, crypto.randomUUID ? crypto.randomUUID() : String(Date.now()));
-      increment("unique-visitor");
-    }
-  } catch (_) {
-    // Navegadores que bloqueiam localStorage ainda contam visualizações, mas não visitantes aproximados.
-  }
+  const sessionKey = `kit-cuidados-v2-session-last-${storageSuffix}`;
+  const now = Date.now();
+  if (isNewSession(readLocal(sessionKey), now)) increment("session");
+  writeLocal(sessionKey, String(now));
 
-  document.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-track-download], [data-track-event]");
-    if (!target) return;
-
-    const downloadName = target.dataset.trackDownload;
-    if (downloadName) increment(`download-click-${downloadName}`);
-
-    const eventName = target.dataset.trackEvent;
-    if (eventName) increment(eventName);
+  const source = classifySource({
+    search: window.location.search,
+    referrer: document.referrer,
+    origin: window.location.origin,
   });
+  increment(`source-${source.source}`);
+  if (source.external) increment("external-view");
+}
 
-  window.KitAnalytics = { increment };
-})();
+document.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-track-download], [data-track-event]");
+  if (!target) return;
+
+  const downloadName = target.dataset.trackDownload;
+  if (downloadName) increment(`download-click-${downloadName}`);
+
+  const eventName = target.dataset.trackEvent;
+  if (eventName) increment(eventName);
+});
+
+window.KitAnalytics = {
+  increment,
+  status: Object.freeze({ mode, bot, tracking: shouldTrack }),
+};

@@ -4,57 +4,86 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Métricas — Kit Organização de Cuidados</title>
+  <title>Métricas qualificadas — Kit Organização de Cuidados</title>
   <style>
-    :root{--ink:#17324d;--sea:#176b87;--paper:#f7f3eb;--card:#fff;--line:#d9d2c4;--muted:#617183;--ok:#1f755b}
+    :root{--ink:#17324d;--sea:#176b87;--paper:#f7f3eb;--card:#fff;--line:#d9d2c4;--muted:#617183;--ok:#1f755b;--warn:#8b4b14}
     *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.55 Arial,sans-serif}
-    main{max-width:1040px;margin:auto;padding:56px 24px 80px}h1{font:700 clamp(2.3rem,6vw,4.6rem)/1 Georgia,serif;margin:.2em 0}
-    .eyebrow{letter-spacing:.14em;text-transform:uppercase;color:var(--sea);font-size:.78rem;font-weight:700}.lead{max-width:760px;color:var(--muted)}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:36px 0}.card{background:var(--card);border:1px solid var(--line);padding:24px;min-height:150px}
+    main{max-width:1080px;margin:auto;padding:56px 24px 80px}h1{font:700 clamp(2.3rem,6vw,4.6rem)/1 Georgia,serif;margin:.2em 0}
+    .eyebrow{letter-spacing:.14em;text-transform:uppercase;color:var(--sea);font-size:.78rem;font-weight:700}.lead{max-width:800px;color:var(--muted)}
+    .notice{padding:16px 18px;background:#fff7e8;border-left:4px solid #d79b3b;margin:24px 0}.notice.ok{background:#eaf7f2;border-color:var(--ok)}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:36px 0}.card{background:var(--card);border:1px solid var(--line);padding:24px;min-height:160px}
     .metric{font-size:2.8rem;font-weight:800;line-height:1;margin:.3em 0;color:var(--sea)}.label{font-weight:700}.hint{color:var(--muted);font-size:.84rem}
     section{border-top:1px solid var(--line);padding:30px 0}.funnel{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.funnel div{background:#fff;padding:18px;border-left:4px solid var(--ok)}
-    button,a.button{display:inline-block;border:0;background:var(--ink);color:#fff;padding:12px 18px;text-decoration:none;font-weight:700;cursor:pointer}
-    .status{display:inline-block;margin-left:12px;color:var(--muted)}code{background:#ebe6dc;padding:.12em .35em}
+    button,a.button{display:inline-block;border:0;background:var(--ink);color:#fff;padding:12px 18px;text-decoration:none;font-weight:700;cursor:pointer;margin:4px 8px 4px 0}.secondary{background:var(--sea)}
+    .status{display:inline-block;margin-left:8px;color:var(--muted)}code{background:#ebe6dc;padding:.12em .35em}.legacy{color:var(--muted)}.legacy strong{color:var(--warn)}
     @media(max-width:820px){.grid{grid-template-columns:1fr 1fr}.funnel{grid-template-columns:1fr}}
     @media(max-width:480px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
 <main>
-  <p class="eyebrow">Painel de acompanhamento</p>
-  <h1>Tráfego e downloads</h1>
-  <p class="lead">Contadores simples, sem cookies e sem credenciais no site. A atualização pode levar alguns segundos.</p>
+  <p class="eyebrow">Painel de acompanhamento v2</p>
+  <h1>Tráfego qualificado e funil</h1>
+  <p class="lead">A nova série começou do zero para não misturar testes, verificações antigas e arquivadores com possíveis visitantes. Ela separa pageviews, sessões e navegadores únicos aproximados.</p>
+
+  <div class="notice" id="internal-notice" role="status">Verificando o modo deste navegador…</div>
+  <p>
+    <button id="mark-internal" type="button">Marcar este navegador como interno</button>
+    <button id="clear-internal" class="secondary" type="button">Voltar a contar este navegador</button>
+  </p>
+  <p class="hint">Marque como interno cada navegador usado pelo proprietário ou pelo agente. A marca fica somente neste navegador por <code>localStorage</code>; ela não identifica a pessoa e não é enviada ao contador.</p>
 
   <div class="grid">
-    <article class="card"><div class="label">Visualizações do site</div><div class="metric" id="page-view">—</div><div class="hint">Cada carregamento de uma página monitorada.</div></article>
-    <article class="card"><div class="label">Visitantes aproximados</div><div class="metric" id="unique-visitor">—</div><div class="hint">Um por navegador, usando apenas localStorage.</div></article>
-    <article class="card"><div class="label">Visitas externas aproximadas</div><div class="metric" id="external-view">—</div><div class="hint">UTM externo ou referência de outro domínio; acessos diretos podem ficar de fora.</div></article>
-    <article class="card"><div class="label">Cliques em download</div><div class="metric" id="download-click-spreadsheet">—</div><div class="hint">Intenção de baixar a planilha.</div></article>
-    <article class="card"><div class="label">Downloads servidos</div><div class="metric" id="release-download">—</div><div class="hint">Contagem do ZIP do produto no GitHub Releases.</div></article>
-    <article class="card"><div class="label">Downloads do PDF gratuito</div><div class="metric" id="free-release-download">—</div><div class="hint">Contagem separada do material de divulgação.</div></article>
+    <article class="card"><div class="label">Pageviews qualificados</div><div class="metric" id="v2-page-view">—</div><div class="hint">Carregamentos após excluir modo interno, testes explícitos e bots reconhecíveis.</div></article>
+    <article class="card"><div class="label">Sessões aproximadas</div><div class="metric" id="v2-session">—</div><div class="hint">Nova sessão após 30 minutos sem atividade no mesmo navegador.</div></article>
+    <article class="card"><div class="label">Navegadores únicos aproximados</div><div class="metric" id="v2-unique-browser">—</div><div class="hint">Um por navegador com armazenamento disponível; não equivale a pessoa.</div></article>
+    <article class="card"><div class="label">Visitas externas qualificadas</div><div class="metric" id="v2-external-view">—</div><div class="hint">Campanha UTM externa ou referência de outro domínio, após os filtros.</div></article>
+    <article class="card"><div class="label">Cliques em download</div><div class="metric" id="v2-download-click-spreadsheet">—</div><div class="hint">Intenção de baixar a planilha na nova série.</div></article>
+    <article class="card"><div class="label">Downloads servidos</div><div class="metric" id="release-download">—</div><div class="hint">Total do ZIP do produto no GitHub Releases; não comprova pagamento.</div></article>
+    <article class="card"><div class="label">Downloads do PDF gratuito após baseline</div><div class="metric" id="free-release-download">—</div><div class="hint">Total do GitHub menos 5 downloads não atribuíveis anteriores à série limpa.</div></article>
   </div>
 
   <section>
     <h2>Interesse no pagamento</h2>
     <div class="funnel">
-      <div><strong id="pix-copy">—</strong><br>cópias do código Pix</div>
-      <div><strong id="download-click-spreadsheet-2">—</strong><br>cliques no botão de baixar</div>
-      <div><strong>Confirmação manual</strong><br>somente o extrato bancário confirma pagamento</div>
+      <div><strong id="v2-pix-copy">—</strong><br>cópias do código Pix</div>
+      <div><strong id="v2-download-click-spreadsheet-2">—</strong><br>cliques no botão de baixar</div>
+      <div><strong>Confirmação manual</strong><br>somente extrato bancário, PSP ou webhook confirma pagamento</div>
     </div>
+  </section>
+
+  <section>
+    <h2>Funil do CuidaLocal</h2>
+    <div class="funnel">
+      <div><strong id="v2-cuidalocal-open">—</strong><br>aberturas do CuidaLocal</div>
+      <div><strong id="v2-pix-copy-cuidalocal">—</strong><br>cópias do Pix de R$ 9,90</div>
+      <div><strong id="v2-download-click-cuidalocal-zip">—</strong><br>cliques para baixar o ZIP</div>
+    </div>
+    <p>Contagem de downloads do ZIP do CuidaLocal servidos pelo GitHub: <strong id="cuidalocal-release-download">—</strong>. Clique ou download não comprova pagamento.</p>
+  </section>
+
+  <section class="legacy">
+    <h2>Métricas antigas contaminadas</h2>
+    <p>Estes números ficam apenas para auditoria histórica e <strong>não devem ser apresentados como audiência humana</strong>.</p>
+    <ul>
+      <li>Pageviews antigos: <strong id="legacy-page-view">—</strong></li>
+      <li>Navegadores antigos aproximados: <strong id="legacy-unique-visitor">—</strong></li>
+      <li>Externas antigas aproximadas: <strong id="legacy-external-view">—</strong></li>
+      <li>Total bruto do PDF gratuito: <strong id="legacy-free-download">—</strong></li>
+    </ul>
   </section>
 
   <section>
     <h2>Como interpretar</h2>
     <ul>
-      <li>“Visitantes aproximados” conta navegadores, não pessoas identificadas.</li>
-      <li>“Visitas externas aproximadas” usa UTM ou referência de outro domínio. Acessos diretos e alguns aplicativos podem ocultar a origem; os contadores públicos também podem ser manipulados.</li>
-      <li>“Clique em download” registra intenção; “Downloads servidos” vem do asset público do GitHub Release.</li>
+      <li>Pageview é carregamento; sessão é período de uso; navegador único é apenas uma deduplicação local. Nenhuma dessas métricas identifica uma pessoa.</li>
+      <li>Modo interno e testes explícitos não entram na série v2. Bots conhecidos são filtrados por automação e user-agent, mas nenhum filtro é perfeito.</li>
+      <li>Acessos diretos e aplicativos que removem referrer podem não aparecer como externos.</li>
+      <li>CounterAPI é pública, bloqueável e não é antifraude. Nenhum dado de saúde, nome ou e-mail é enviado pelo código.</li>
       <li>Download não equivale a pagamento. Pix copiado também não equivale a pagamento.</li>
-      <li>Os contadores públicos podem sofrer bloqueio por extensões e não são adequados para auditoria financeira.</li>
-      <li>O navegador consulta a CounterAPI, que pode receber metadados técnicos normais da requisição, como IP e referrer; nenhum nome, e-mail ou dado de cuidados é enviado pelo código.</li>
-      <li>Testes usam eventos com prefixo <code>test-</code> e ficam fora destes números comerciais.</li>
+      <li>Testes usam prefixo <code>test-v2-</code>, separado da produção.</li>
     </ul>
-    <button id="refresh" type="button">Atualizar métricas</button><span class="status" id="status" role="status">Aguardando…</span>
+    <button id="refresh" type="button">Atualizar métricas</button><span class="status" id="status">Aguardando…</span>
   </section>
 
   <p><a class="button" href="./">Voltar à página de vendas</a></p>
@@ -65,6 +94,31 @@
   const counterBase = `https://api.counterapi.dev/v1/${namespace}`;
   const releaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/planilha-v1.0";
   const freeReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/materiais-gratuitos-v1";
+  const cuidalocalReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/cuidalocal-v1.0.0";
+  const internalKey = "kit-cuidados-analytics-internal-v2";
+  const freeDownloadBaseline = 5;
+
+  const params = new URLSearchParams(location.search);
+  if (params.get("analytics_internal") === "1") localStorage.setItem(internalKey, "1");
+  if (params.get("analytics_internal") === "0") localStorage.removeItem(internalKey);
+
+  function updateInternalNotice() {
+    const internal = localStorage.getItem(internalKey) === "1";
+    const notice = document.getElementById("internal-notice");
+    notice.className = internal ? "notice ok" : "notice";
+    notice.textContent = internal
+      ? "Modo interno ativo neste navegador: suas visitas não entram nas métricas v2."
+      : "Modo público ativo: este navegador será contado em páginas monitoradas.";
+  }
+
+  document.getElementById("mark-internal").addEventListener("click", () => {
+    localStorage.setItem(internalKey, "1");
+    updateInternalNotice();
+  });
+  document.getElementById("clear-internal").addEventListener("click", () => {
+    localStorage.removeItem(internalKey);
+    updateInternalNotice();
+  });
 
   async function readCounter(name) {
     const response = await fetch(`${counterBase}/${name}/`, {cache: "no-store", credentials: "omit"});
@@ -82,27 +136,37 @@
     return asset ? Number(asset.download_count || 0) : 0;
   }
 
+  function setMetric(id, value) {
+    document.getElementById(id).textContent = Number(value).toLocaleString("pt-BR");
+  }
+
   async function refresh() {
     const status = document.getElementById("status");
     status.textContent = "Atualizando…";
     try {
-      const [views, visitors, externalViews, clicks, pixCopies, downloads, freeDownloads] = await Promise.all([
-        readCounter("page-view"),
-        readCounter("unique-visitor"),
-        readCounter("external-view"),
-        readCounter("download-click-spreadsheet"),
-        readCounter("pix-copy"),
+      const values = await Promise.all([
+        readCounter("v2-page-view"), readCounter("v2-session"), readCounter("v2-unique-browser"),
+        readCounter("v2-external-view"), readCounter("v2-download-click-spreadsheet"), readCounter("v2-pix-copy"),
+        readCounter("v2-cuidalocal-open"), readCounter("v2-pix-copy-cuidalocal"), readCounter("v2-download-click-cuidalocal-zip"),
+        readCounter("page-view"), readCounter("unique-visitor"), readCounter("external-view"),
         releaseDownloads(releaseApi, "Kit_Organizacao_de_Cuidados.zip"),
         releaseDownloads(freeReleaseApi, "Materiais_Gratuitos_Cuidados.pdf"),
+        releaseDownloads(cuidalocalReleaseApi, "CuidaLocal-v1.0.0.zip"),
       ]);
-      document.getElementById("page-view").textContent = views.toLocaleString("pt-BR");
-      document.getElementById("unique-visitor").textContent = visitors.toLocaleString("pt-BR");
-      document.getElementById("external-view").textContent = externalViews.toLocaleString("pt-BR");
-      document.getElementById("download-click-spreadsheet").textContent = clicks.toLocaleString("pt-BR");
-      document.getElementById("download-click-spreadsheet-2").textContent = clicks.toLocaleString("pt-BR");
-      document.getElementById("pix-copy").textContent = pixCopies.toLocaleString("pt-BR");
-      document.getElementById("release-download").textContent = downloads.toLocaleString("pt-BR");
-      document.getElementById("free-release-download").textContent = freeDownloads.toLocaleString("pt-BR");
+      const [
+        views, sessions, browsers, external, clicks, pix,
+        cuidalocalOpen, cuidalocalPix, cuidalocalZipClicks,
+        legacyViews, legacyBrowsers, legacyExternal,
+        productDownloads, freeDownloads, cuidalocalDownloads,
+      ] = values;
+      setMetric("v2-page-view", views); setMetric("v2-session", sessions); setMetric("v2-unique-browser", browsers);
+      setMetric("v2-external-view", external); setMetric("v2-download-click-spreadsheet", clicks);
+      setMetric("v2-download-click-spreadsheet-2", clicks); setMetric("v2-pix-copy", pix);
+      setMetric("v2-cuidalocal-open", cuidalocalOpen); setMetric("v2-pix-copy-cuidalocal", cuidalocalPix);
+      setMetric("v2-download-click-cuidalocal-zip", cuidalocalZipClicks); setMetric("cuidalocal-release-download", cuidalocalDownloads);
+      setMetric("release-download", productDownloads); setMetric("free-release-download", Math.max(0, freeDownloads - freeDownloadBaseline));
+      setMetric("legacy-page-view", legacyViews); setMetric("legacy-unique-visitor", legacyBrowsers);
+      setMetric("legacy-external-view", legacyExternal); setMetric("legacy-free-download", freeDownloads);
       status.textContent = `Atualizado às ${new Date().toLocaleTimeString("pt-BR")}`;
     } catch (error) {
       status.textContent = "Não foi possível atualizar agora.";
@@ -110,6 +174,7 @@
     }
   }
 
+  updateInternalNotice();
   document.getElementById("refresh").addEventListener("click", refresh);
   refresh();
 })();

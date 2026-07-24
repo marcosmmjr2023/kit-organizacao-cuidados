@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#175c4c">
+  <meta name="description" content="Organização privada e offline da rotina de cuidados.">
+  <meta name="robots" content="noindex,nofollow">
+  <title>CuidaLocal — organização de cuidados</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Navegação principal">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><span><strong>CuidaLocal</strong><small>Organização privada</small></span></div>
+      <nav id="main-nav">
+        <button class="nav-item active" data-route="painel"><span aria-hidden="true">⌂</span>Painel</button>
+        <button class="nav-item" data-route="agenda"><span aria-hidden="true">□</span>Agenda</button>
+        <button class="nav-item" data-route="medicamentos"><span aria-hidden="true">＋</span>Medicamentos</button>
+        <button class="nav-item" data-route="diario"><span aria-hidden="true">≡</span>Diário</button>
+        <button class="nav-item" data-route="despesas"><span aria-hidden="true">$</span>Despesas</button>
+        <button class="nav-item" data-route="contatos"><span aria-hidden="true">○</span>Contatos</button>
+        <button class="nav-item" data-route="emergencia"><span aria-hidden="true">!</span>Cartão de emergência</button>
+        <button class="nav-item" data-route="dados"><span aria-hidden="true">⇩</span>Dados e backup</button>
+      </nav>
+      <div class="privacy-note"><strong>Seus dados ficam aqui.</strong><span>Armazenados somente neste navegador.</span><span class="offline-status" id="offline-status">Disponível offline</span></div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
+        <div><p class="eyebrow" id="today-label"></p><h1 id="page-title">Painel diário</h1></div>
+        <div class="top-actions"><span class="save-state" id="save-state" aria-live="polite">Salvo neste dispositivo</span><button class="button secondary compact" data-action="quick-diary">+ Registro rápido</button></div>
+      </header>
+      <div class="safety-banner" role="note"><strong>Ferramenta de organização.</strong> Não substitui avaliação, orientação ou atendimento de profissionais de saúde. Em emergência, procure o serviço local adequado.</div>
+      <main id="conteudo" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-backdrop" role="presentation">
+    <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
+  </div>
+
+  <div class="modal-backdrop hidden" id="onboarding" role="presentation">
+    <section class="modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="onboarding-brand"><span class="brand-mark large">C</span><span class="badge">PRIVADO • OFFLINE</span></div>
+      <h2 id="onboarding-title">Mais clareza para quem cuida.</h2>
+      <p class="lead">Organize rotina, registros e informações importantes sem criar conta e sem enviar dados para a internet.</p>
+      <div class="feature-row">
+        <div><span class="feature-icon">✓</span><strong>Funciona offline</strong><small>Após o primeiro acesso</small></div>
+        <div><span class="feature-icon">⌂</span><strong>Fica no aparelho</strong><small>Você controla o backup</small></div>
+        <div><span class="feature-icon">↗</span><strong>Fácil de levar</strong><small>JSON, CSV e impressão</small></div>
+      </div>
+      <div class="notice warning"><strong>Importante</strong><p>CuidaLocal não faz diagnóstico, não prescreve, não sugere doses e não substitui profissionais de saúde. Registre medicamentos somente conforme orientação profissional já recebida.</p></div>
+      <label class="check-row"><input type="checkbox" id="onboarding-ack"> <span>Li e entendi o aviso acima.</span></label>
+      <div class="modal-actions split"><button class="button secondary" id="start-demo" disabled>Explorar com dados fictícios</button><button class="button primary" id="start-empty" disabled>Começar em branco</button></div>
+      <small class="centered muted">Você poderá apagar os dados fictícios a qualquer momento.</small>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <input type="file" id="backup-file" accept="application/json,.json" hidden>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

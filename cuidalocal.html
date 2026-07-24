@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="CuidaLocal: aplicativo privado e offline para organizar rotina de cuidados, por R$ 9,90.">
+  <link rel="canonical" href="https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html">
+  <meta property="og:title" content="CuidaLocal — organização privada e offline">
+  <meta property="og:description" content="Agenda, registros, despesas, contatos, emergência e backup local por R$ 9,90.">
+  <meta property="og:type" content="product">
+  <meta property="og:url" content="https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html">
+  <title>CuidaLocal — PWA offline por R$ 9,90</title>
+  <style>
+    :root{--ink:#143b32;--green:#175c4c;--mint:#cfe6dc;--paper:#f5f6f3;--white:#fff;--accent:#c44f45;--line:#ccd8d2;--muted:#536861}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.62 Arial,sans-serif}header,main,footer{max-width:1040px;margin:auto;padding-inline:24px}
+    header{padding-top:68px;padding-bottom:48px;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}.eyebrow{color:var(--green);font-weight:800;letter-spacing:.15em;text-transform:uppercase;font-size:.78rem}
+    h1{font:700 clamp(3rem,7vw,5.8rem)/.95 Georgia,serif;letter-spacing:-.045em;margin:.25em 0}h2{font:700 2.2rem/1.1 Georgia,serif}.lead{font-size:1.2rem;max-width:650px}.price{color:var(--accent);font-size:2.8rem;font-weight:900}
+    .preview{background:var(--green);color:#fff;padding:30px;box-shadow:12px 14px 0 var(--mint)}.preview strong{font-size:1.4rem}.preview ul{padding-left:20px}
+    section{border-top:1px solid var(--line);padding:48px 0}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:#fff;border:1px solid var(--line);padding:22px}.card strong{display:block;margin-bottom:8px}
+    .pay{display:grid;grid-template-columns:280px 1fr;gap:34px;background:#fff;padding:32px;border:1px solid var(--line);align-items:center}.pay img{width:100%;height:auto}code{display:block;background:#edf2ef;padding:10px;word-break:break-all;font-size:.82rem}
+    .button,button{display:inline-block;border:0;background:var(--accent);color:#fff;padding:14px 18px;text-decoration:none;font-weight:800;cursor:pointer;margin:8px 8px 8px 0;min-height:48px}.secondary{background:var(--green)}.fine{color:var(--muted);font-size:.84rem}.warning{background:#fff7e8;border-left:4px solid #d79b3b;padding:16px}
+    @media(max-width:760px){header,.pay,.grid{grid-template-columns:1fr}header{padding-top:38px}.preview{box-shadow:7px 8px 0 var(--mint)}.pay img{max-width:260px;margin:auto}.button,button{display:block;width:100%;text-align:center}}
+  </style>
+</head>
+<body>
+<header>
+  <div><p class="eyebrow">Aplicativo instalável • sem mensalidade</p><h1>CuidaLocal</h1><p class="lead">Organize a rotina de cuidados sem criar conta e sem transmitir informações pessoais para um servidor.</p><div class="price">R$ 9,90</div><a class="button" href="#comprar">Comprar com Pix</a><a class="button secondary" data-track-event="cuidalocal-preview" href="cuidalocal/">Ver o aplicativo</a></div>
+  <aside class="preview"><strong>Um painel local para o dia a dia</strong><ul><li>Agenda e pendências</li><li>Registros administrativos</li><li>Despesas e contatos</li><li>Cartão de emergência</li><li>Backup JSON, CSV e impressão</li></ul></aside>
+</header>
+<main>
+  <section><h2>Privado por construção</h2><div class="grid"><div class="card"><strong>Dados locais</strong>Os dados ficam somente no navegador deste aparelho. Não são enviados ao site nem ao contador.</div><div class="card"><strong>Funciona offline após o primeiro acesso</strong>O service worker mantém o aplicativo disponível mesmo sem conexão, depois que os arquivos forem carregados.</div><div class="card"><strong>Você controla o backup</strong>Exporte JSON ou CSV e guarde sua própria cópia. Limpar o navegador sem backup pode apagar os dados.</div></div></section>
+  <section><h2>O que você recebe</h2><p>Acesso à PWA instalável CuidaLocal e uma cópia em ZIP para arquivo pessoal. A licença cobre o comprador, uma família ou uma residência, sem mensalidade.</p><p class="warning"><strong>Limite importante:</strong> o CuidaLocal organiza informações. Não diagnostica, não prescreve, não sugere doses e não substitui profissionais ou serviços de emergência.</p></section>
+  <section id="comprar"><h2>Pagamento por Pix</h2><div class="pay"><img src="pix-r9-90.png" alt="QR Code Pix no valor de R$ 9,90"><div><p>Valor único: <strong>R$ 9,90</strong>. Confira o nome do recebedor no aplicativo bancário antes de confirmar.</p><p>Pix copia e cola:</p><code id="cuidalocal-payload">00020101021126510014br.gov.bcb.pix0111025578524060214CuidaLocal PWA52040000530398654049.905802BR5917MARCOS M M JUNIOR6008PAULINIA62140510CUIDALOCAL63040CAC</code><button type="button" class="secondary" data-track-event="pix-copy-cuidalocal" onclick="navigator.clipboard.writeText(document.getElementById('cuidalocal-payload').textContent).then(()=>this.textContent='Código Pix copiado')">Copiar código Pix</button><p><strong>Entrega por confiança:</strong> esta página não confirma o Pix automaticamente. Depois do pagamento, abra o aplicativo ou baixe a cópia para arquivo.</p><a class="button" data-track-event="cuidalocal-open" href="cuidalocal/">Já paguei — abrir CuidaLocal</a><a class="button secondary" data-track-download="cuidalocal-zip" href="https://github.com/marcosmmjr2023/kit-organizacao-cuidados/releases/download/cuidalocal-v1.0.0/CuidaLocal-v1.0.0.zip">Baixar cópia ZIP</a><p class="fine">Por ser uma PWA estática, o acesso é entregue por confiança e não possui bloqueio automático após o Pix. Guarde o comprovante.</p></div></div></section>
+  <section><h2>Instalação</h2><ol><li>Abra o CuidaLocal no navegador.</li><li>No celular ou computador, use “Instalar aplicativo” ou “Adicionar à tela inicial”, quando disponível.</li><li>Abra uma vez com internet; depois teste em modo avião.</li><li>Faça backups periódicos pelo menu “Dados e backup”.</li></ol></section>
+</main>
+<footer><p><a href="./">Kit de planilha por R$ 1,99</a> · <a href="metricas.html">Métricas públicas</a></p><p class="fine">Produto administrativo para organização de cuidados. Não substitui orientação profissional.</p></footer>
+<script type="module" src="analytics.js"></script>
+</body>
+</html>

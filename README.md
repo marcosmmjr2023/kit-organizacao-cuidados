@@ -4,6 +4,13 @@ Página pública de venda de um produto digital para organização administrativ
 
 Site: https://marcosmmjr2023.github.io/kit-organizacao-cuidados/
 
+## Produtos
+
+- **Kit Organização de Cuidados — R$ 1,99:** planilha editável e guia em PDF.
+- **[CuidaLocal — R$ 9,90](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html):** PWA instalável, local-first e disponível offline após o primeiro acesso. Agenda, registros administrativos, despesas, contatos, emergência e backups ficam no navegador.
+
+O [painel público de métricas](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/metricas.html) separa pageviews qualificados, sessões aproximadas, navegadores únicos aproximados e visitas externas atribuídas. Navegadores do proprietário/agente podem ser marcados como internos e bots reconhecíveis são filtrados.
+
 ## Materiais gratuitos
 
 - [Baixar o pacote em PDF](https://github.com/marcosmmjr2023/kit-organizacao-cuidados/releases/download/materiais-gratuitos-v1/Materiais_Gratuitos_Cuidados.pdf)

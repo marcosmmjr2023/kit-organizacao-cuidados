@@ -1,4 +1,5 @@
-const CACHE = 'cuidalocal-v2.0.1';
+const CACHE_PREFIX = 'cuidalocal-';
+const CACHE = `${CACHE_PREFIX}v2.0.2`;
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,7 +16,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', event => {

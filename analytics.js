@@ -69,8 +69,8 @@ if (shouldTrack) {
 
   const sessionKey = `kit-cuidados-v2-session-last-${storageSuffix}`;
   const now = Date.now();
-  if (isNewSession(readLocal(sessionKey), now)) increment("session");
-  writeLocal(sessionKey, String(now));
+  const previousSession = readLocal(sessionKey);
+  if (writeLocal(sessionKey, String(now)) && isNewSession(previousSession, now)) increment("session");
 
   const source = classifySource({
     search: window.location.search,

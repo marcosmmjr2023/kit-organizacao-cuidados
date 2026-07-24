@@ -97,26 +97,44 @@
   const cuidalocalReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/cuidalocal-v1.0.0";
   const internalKey = "kit-cuidados-analytics-internal-v2";
   const freeDownloadBaseline = 5;
+  let storageAvailable = true;
+
+  function safeLocalGet(key) {
+    try { return localStorage.getItem(key); }
+    catch (_) { storageAvailable = false; return null; }
+  }
+  function safeLocalSet(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch (_) { storageAvailable = false; return false; }
+  }
+  function safeLocalRemove(key) {
+    try { localStorage.removeItem(key); return true; }
+    catch (_) { storageAvailable = false; return false; }
+  }
 
   const params = new URLSearchParams(location.search);
-  if (params.get("analytics_internal") === "1") localStorage.setItem(internalKey, "1");
-  if (params.get("analytics_internal") === "0") localStorage.removeItem(internalKey);
+  if (params.get("analytics_internal") === "1") safeLocalSet(internalKey, "1");
+  if (params.get("analytics_internal") === "0") safeLocalRemove(internalKey);
 
   function updateInternalNotice() {
-    const internal = localStorage.getItem(internalKey) === "1";
+    const internal = safeLocalGet(internalKey) === "1";
     const notice = document.getElementById("internal-notice");
     notice.className = internal ? "notice ok" : "notice";
+    if (!storageAvailable) {
+      notice.textContent = "Armazenamento local indisponível: este navegador não pode ser marcado como interno e não entra nas métricas de navegador único ou sessão.";
+      return;
+    }
     notice.textContent = internal
       ? "Modo interno ativo neste navegador: suas visitas não entram nas métricas v2."
       : "Modo público ativo: este navegador será contado em páginas monitoradas.";
   }
 
   document.getElementById("mark-internal").addEventListener("click", () => {
-    localStorage.setItem(internalKey, "1");
+    safeLocalSet(internalKey, "1");
     updateInternalNotice();
   });
   document.getElementById("clear-internal").addEventListener("click", () => {
-    localStorage.removeItem(internalKey);
+    safeLocalRemove(internalKey);
     updateInternalNotice();
   });
 

@@ -6,6 +6,7 @@ Site: https://marcosmmjr2023.github.io/kit-organizacao-cuidados/
 
 ## Materiais gratuitos
 
+- [Baixar o pacote em PDF](https://github.com/marcosmmjr2023/kit-organizacao-cuidados/releases/download/materiais-gratuitos-v1/Materiais_Gratuitos_Cuidados.pdf)
 - [Checklist para troca de cuidador](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/checklist-troca-de-cuidador.html)
 - [Como organizar a rotina de cuidados familiares](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/como-organizar-rotina-de-cuidados.html)
 - [Cartão de emergência para imprimir](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cartao-de-emergencia-para-idoso.html)

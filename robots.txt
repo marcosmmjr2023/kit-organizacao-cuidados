@@ -1,3 +1,4 @@
 User-agent: *
 Allow: /
 Sitemap: https://marcosmmjr2023.github.io/kit-organizacao-cuidados/sitemap.xml
+# Feed: https://marcosmmjr2023.github.io/kit-organizacao-cuidados/feed.xml

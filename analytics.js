@@ -20,6 +20,21 @@
 
   increment("page-view");
 
+  const campaignSource = (params.get("utm_source") || "").toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 40);
+  if (campaignSource) {
+    increment(`source-${campaignSource}`);
+    if (campaignSource !== "conteudo") increment("external-view");
+  } else if (document.referrer) {
+    try {
+      if (new URL(document.referrer).origin !== window.location.origin) {
+        increment("source-external-referral");
+        increment("external-view");
+      }
+    } catch (_) {
+      // Referrers inválidos são ignorados; nenhuma URL completa é enviada.
+    }
+  }
+
   try {
     const visitorKey = `kit-cuidados-visitor-${testPrefix || "prod"}`;
     if (!localStorage.getItem(visitorKey)) {

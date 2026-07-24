@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Organização de cuidados familiares</title>
+    <link>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/</link>
+    <description>Materiais gratuitos para organizar a rotina de cuidados familiares.</description>
+    <language>pt-BR</language>
+    <lastBuildDate>Fri, 24 Jul 2026 02:16:00 GMT</lastBuildDate>
+    <atom:link href="https://marcosmmjr2023.github.io/kit-organizacao-cuidados/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Checklist gratuito para troca de cuidador</title>
+      <link>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/checklist-troca-de-cuidador.html</link>
+      <guid>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/checklist-troca-de-cuidador.html</guid>
+      <pubDate>Fri, 24 Jul 2026 02:16:00 GMT</pubDate>
+      <description>Uma lista curta e imprimível para organizar pendências e recados na passagem de plantão.</description>
+    </item>
+    <item>
+      <title>Como organizar a rotina de cuidados familiares</title>
+      <link>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/como-organizar-rotina-de-cuidados.html</link>
+      <guid>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/como-organizar-rotina-de-cuidados.html</guid>
+      <pubDate>Fri, 24 Jul 2026 02:16:00 GMT</pubDate>
+      <description>Um método simples para reunir agenda, tarefas, despesas, contatos e registros administrativos.</description>
+    </item>
+    <item>
+      <title>Cartão de emergência para idoso: modelo gratuito</title>
+      <link>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cartao-de-emergencia-para-idoso.html</link>
+      <guid>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cartao-de-emergencia-para-idoso.html</guid>
+      <pubDate>Fri, 24 Jul 2026 02:16:00 GMT</pubDate>
+      <description>Modelo imprimível com contatos, identificação e orientações já fornecidas por profissionais.</description>
+    </item>
+  </channel>
+</rss>

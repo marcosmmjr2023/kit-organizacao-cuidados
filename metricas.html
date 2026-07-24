@@ -26,8 +26,9 @@
   <p class="lead">Contadores simples, sem cookies e sem credenciais no site. A atualização pode levar alguns segundos.</p>
 
   <div class="grid">
-    <article class="card"><div class="label">Visualizações de página</div><div class="metric" id="page-view">—</div><div class="hint">Cada carregamento da página de vendas.</div></article>
+    <article class="card"><div class="label">Visualizações do site</div><div class="metric" id="page-view">—</div><div class="hint">Cada carregamento de uma página monitorada.</div></article>
     <article class="card"><div class="label">Visitantes aproximados</div><div class="metric" id="unique-visitor">—</div><div class="hint">Um por navegador, usando apenas localStorage.</div></article>
+    <article class="card"><div class="label">Visitas externas aproximadas</div><div class="metric" id="external-view">—</div><div class="hint">UTM externo ou referência de outro domínio; acessos diretos podem ficar de fora.</div></article>
     <article class="card"><div class="label">Cliques em download</div><div class="metric" id="download-click-spreadsheet">—</div><div class="hint">Intenção de baixar a planilha.</div></article>
     <article class="card"><div class="label">Downloads servidos</div><div class="metric" id="release-download">—</div><div class="hint">Contagem do arquivo no GitHub Releases.</div></article>
   </div>
@@ -45,6 +46,7 @@
     <h2>Como interpretar</h2>
     <ul>
       <li>“Visitantes aproximados” conta navegadores, não pessoas identificadas.</li>
+      <li>“Visitas externas aproximadas” usa UTM ou referência de outro domínio. Acessos diretos e alguns aplicativos podem ocultar a origem; os contadores públicos também podem ser manipulados.</li>
       <li>“Clique em download” registra intenção; “Downloads servidos” vem do asset público do GitHub Release.</li>
       <li>Download não equivale a pagamento. Pix copiado também não equivale a pagamento.</li>
       <li>Os contadores públicos podem sofrer bloqueio por extensões e não são adequados para auditoria financeira.</li>
@@ -82,15 +84,17 @@
     const status = document.getElementById("status");
     status.textContent = "Atualizando…";
     try {
-      const [views, visitors, clicks, pixCopies, downloads] = await Promise.all([
+      const [views, visitors, externalViews, clicks, pixCopies, downloads] = await Promise.all([
         readCounter("page-view"),
         readCounter("unique-visitor"),
+        readCounter("external-view"),
         readCounter("download-click-spreadsheet"),
         readCounter("pix-copy"),
         releaseDownloads(),
       ]);
       document.getElementById("page-view").textContent = views.toLocaleString("pt-BR");
       document.getElementById("unique-visitor").textContent = visitors.toLocaleString("pt-BR");
+      document.getElementById("external-view").textContent = externalViews.toLocaleString("pt-BR");
       document.getElementById("download-click-spreadsheet").textContent = clicks.toLocaleString("pt-BR");
       document.getElementById("download-click-spreadsheet-2").textContent = clicks.toLocaleString("pt-BR");
       document.getElementById("pix-copy").textContent = pixCopies.toLocaleString("pt-BR");

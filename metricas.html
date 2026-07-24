@@ -30,7 +30,8 @@
     <article class="card"><div class="label">Visitantes aproximados</div><div class="metric" id="unique-visitor">—</div><div class="hint">Um por navegador, usando apenas localStorage.</div></article>
     <article class="card"><div class="label">Visitas externas aproximadas</div><div class="metric" id="external-view">—</div><div class="hint">UTM externo ou referência de outro domínio; acessos diretos podem ficar de fora.</div></article>
     <article class="card"><div class="label">Cliques em download</div><div class="metric" id="download-click-spreadsheet">—</div><div class="hint">Intenção de baixar a planilha.</div></article>
-    <article class="card"><div class="label">Downloads servidos</div><div class="metric" id="release-download">—</div><div class="hint">Contagem do arquivo no GitHub Releases.</div></article>
+    <article class="card"><div class="label">Downloads servidos</div><div class="metric" id="release-download">—</div><div class="hint">Contagem do ZIP do produto no GitHub Releases.</div></article>
+    <article class="card"><div class="label">Downloads do PDF gratuito</div><div class="metric" id="free-release-download">—</div><div class="hint">Contagem separada do material de divulgação.</div></article>
   </div>
 
   <section>
@@ -63,6 +64,7 @@
   const namespace = "kit-cuidados-prod-b1e57bac";
   const counterBase = `https://api.counterapi.dev/v1/${namespace}`;
   const releaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/planilha-v1.0";
+  const freeReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/materiais-gratuitos-v1";
 
   async function readCounter(name) {
     const response = await fetch(`${counterBase}/${name}/`, {cache: "no-store", credentials: "omit"});
@@ -72,11 +74,11 @@
     return Number(data.count || 0);
   }
 
-  async function releaseDownloads() {
-    const response = await fetch(releaseApi, {cache: "no-store", credentials: "omit"});
+  async function releaseDownloads(apiUrl, assetName) {
+    const response = await fetch(apiUrl, {cache: "no-store", credentials: "omit"});
     if (!response.ok) throw new Error(`GitHub ${response.status}`);
     const release = await response.json();
-    const asset = release.assets.find((item) => item.name === "Kit_Organizacao_de_Cuidados.zip");
+    const asset = release.assets.find((item) => item.name === assetName);
     return asset ? Number(asset.download_count || 0) : 0;
   }
 
@@ -84,13 +86,14 @@
     const status = document.getElementById("status");
     status.textContent = "Atualizando…";
     try {
-      const [views, visitors, externalViews, clicks, pixCopies, downloads] = await Promise.all([
+      const [views, visitors, externalViews, clicks, pixCopies, downloads, freeDownloads] = await Promise.all([
         readCounter("page-view"),
         readCounter("unique-visitor"),
         readCounter("external-view"),
         readCounter("download-click-spreadsheet"),
         readCounter("pix-copy"),
-        releaseDownloads(),
+        releaseDownloads(releaseApi, "Kit_Organizacao_de_Cuidados.zip"),
+        releaseDownloads(freeReleaseApi, "Materiais_Gratuitos_Cuidados.pdf"),
       ]);
       document.getElementById("page-view").textContent = views.toLocaleString("pt-BR");
       document.getElementById("unique-visitor").textContent = visitors.toLocaleString("pt-BR");
@@ -99,6 +102,7 @@
       document.getElementById("download-click-spreadsheet-2").textContent = clicks.toLocaleString("pt-BR");
       document.getElementById("pix-copy").textContent = pixCopies.toLocaleString("pt-BR");
       document.getElementById("release-download").textContent = downloads.toLocaleString("pt-BR");
+      document.getElementById("free-release-download").textContent = freeDownloads.toLocaleString("pt-BR");
       status.textContent = `Atualizado às ${new Date().toLocaleTimeString("pt-BR")}`;
     } catch (error) {
       status.textContent = "Não foi possível atualizar agora.";

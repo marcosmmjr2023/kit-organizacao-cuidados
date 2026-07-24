@@ -48,6 +48,7 @@
       <li>“Clique em download” registra intenção; “Downloads servidos” vem do asset público do GitHub Release.</li>
       <li>Download não equivale a pagamento. Pix copiado também não equivale a pagamento.</li>
       <li>Os contadores públicos podem sofrer bloqueio por extensões e não são adequados para auditoria financeira.</li>
+      <li>O navegador consulta a CounterAPI, que pode receber metadados técnicos normais da requisição, como IP e referrer; nenhum nome, e-mail ou dado de cuidados é enviado pelo código.</li>
       <li>Testes usam eventos com prefixo <code>test-</code> e ficam fora destes números comerciais.</li>
     </ul>
     <button id="refresh" type="button">Atualizar métricas</button><span class="status" id="status" role="status">Aguardando…</span>

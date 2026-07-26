@@ -22,6 +22,10 @@ Este registro separa publicação, divulgação, tráfego e venda. Uma ação s�
 | 2026-07-26 | Medição | Dashboard atualizado para a versão 1.2.0, separando cliques/downloads do ZIP e APK e subtraindo o baseline não atribuível | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/metricas.html | Publicado e verificado |
 | 2026-07-26 | Descoberta | PWA adicionada ao sitemap e três URLs submetidas ao protocolo IndexNow | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/sitemap.xml | HTTP 202 — aceita para processamento; não prova ranking nem audiência |
 | 2026-07-26 | Distribuição externa durável | Página comercial e PWA enviadas ao Internet Archive | https://web.archive.org/web/https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html | Duas respostas HTTP 200; possíveis acessos automatizados separados do baseline |
+| 2026-07-26 | Publicação internacional | Página comercial e PWA completas em inglês, com ZIP em inglês no release e URL canônica/sitemap próprios | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal-en.html | Publicado no GitHub Pages e verificado por HTTP 200 |
+| 2026-07-26 | Descoberta internacional | URLs da página e PWA em inglês submetidas ao IndexNow | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/sitemap.xml | HTTP 200 — aceita para processamento; não prova indexação, ranking ou audiência |
+| 2026-07-26 | Diretórios públicos | PR `awesome-pwa#450` atualizada para apontar à PWA em inglês e descrição revisada | https://github.com/hemanth/awesome-pwa/pull/450 | PR aberto; atualização enviada, ainda depende de moderação |
+| 2026-07-26 | Diretórios públicos | PR `awesome-0data#7` atualizada para apontar à PWA em inglês e descrição revisada | https://github.com/0dataapp/awesome-0data/pull/7 | PR aberto; atualização enviada, ainda depende de moderação |
 
 ## Resultados comprovados após as ações
 

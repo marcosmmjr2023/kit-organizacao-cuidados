@@ -79,6 +79,7 @@
       <li>Pageview é carregamento; sessão é período de uso; navegador único é apenas uma deduplicação local. Nenhuma dessas métricas identifica uma pessoa.</li>
       <li>Modo interno e testes explícitos não entram na série v2. Bots conhecidos são filtrados por automação e user-agent, mas nenhum filtro é perfeito.</li>
       <li>Acessos diretos e aplicativos que removem referrer podem não aparecer como externos.</li>
+      <li>UTMs desconhecidos são agrupados como campanha externa, sem copiar o valor recebido na URL para o contador.</li>
       <li>CounterAPI é pública, bloqueável e não é antifraude. Nenhum dado de saúde, nome ou e-mail é enviado pelo código.</li>
       <li>Download não equivale a pagamento. Pix copiado também não equivale a pagamento.</li>
       <li>Testes usam prefixo <code>test-v2-</code>, separado da produção.</li>

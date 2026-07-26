@@ -27,19 +27,31 @@
         <button class="nav-item" data-route="emergencia"><span aria-hidden="true">!</span>Cartão de emergência</button>
         <button class="nav-item" data-route="dados"><span aria-hidden="true">⇩</span>Dados e backup</button>
       </nav>
-      <div class="privacy-note"><strong>Seus dados ficam aqui.</strong><span>Armazenados somente neste navegador.</span><span class="offline-status" id="offline-status">Disponível offline</span></div>
+      <div class="privacy-note"><strong>Seus dados ficam aqui.</strong><span>Armazenados somente neste navegador.</span><span class="offline-status pending" id="offline-status">Preparando offline</span></div>
     </aside>
 
     <div class="main-column">
       <header class="topbar">
         <button class="icon-button menu-toggle" id="menu-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
-        <div><p class="eyebrow" id="today-label"></p><h1 id="page-title">Painel diário</h1></div>
-        <div class="top-actions"><span class="save-state" id="save-state" aria-live="polite">Salvo neste dispositivo</span><button class="button secondary compact" data-action="quick-diary">+ Registro rápido</button></div>
+        <button class="simple-home-button hidden" id="simple-home" data-action="simple-home" aria-label="Voltar para o início"><span aria-hidden="true">←</span><span>Início</span></button>
+        <div class="topbar-title"><p class="eyebrow" id="today-label"></p><h1 id="page-title">Painel diário</h1></div>
+        <div class="top-actions">
+          <span class="save-state" id="save-state" aria-live="polite">Salvo neste dispositivo</span>
+          <button class="button secondary compact quick-diary" data-action="quick-diary">+ Registro rápido</button>
+          <button class="mode-switch" data-ui-mode role="switch" aria-checked="false" aria-label="Ativar tela simples">
+            <span class="mode-switch-track" aria-hidden="true"><span></span></span>
+            <span class="mode-switch-copy"><strong>Tela simples</strong><small>Desligada</small></span>
+          </button>
+        </div>
       </header>
-      <div class="safety-banner" role="note"><strong>Ferramenta de organização.</strong> Não substitui avaliação, orientação ou atendimento de profissionais de saúde. Em emergência, procure o serviço local adequado.</div>
+      <div class="safety-banner" id="safety-banner" role="note"><strong>Ferramenta de organização.</strong> Não substitui avaliação, orientação ou atendimento de profissionais de saúde. Em emergência, procure o serviço local adequado.</div>
       <main id="conteudo" tabindex="-1"></main>
     </div>
   </div>
+
+  <button class="simple-emergency-shortcut hidden" id="simple-emergency-shortcut" data-route-go="emergencia" aria-label="Abrir ajuda e emergência">
+    <span aria-hidden="true">!</span><strong>Preciso de ajuda</strong>
+  </button>
 
   <div class="modal-backdrop hidden" id="modal-backdrop" role="presentation">
     <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section>
@@ -50,6 +62,10 @@
       <div class="onboarding-brand"><span class="brand-mark large">C</span><span class="badge">PRIVADO • OFFLINE</span></div>
       <h2 id="onboarding-title">Mais clareza para quem cuida.</h2>
       <p class="lead">Organize rotina, registros e informações importantes sem criar conta e sem enviar dados para a internet.</p>
+      <button class="mode-switch onboarding-mode-switch" data-ui-mode role="switch" aria-checked="false" aria-label="Ativar tela simples">
+        <span class="mode-switch-track" aria-hidden="true"><span></span></span>
+        <span class="mode-switch-copy"><strong>Tela simples</strong><small>Ícones grandes, alto contraste e somente o essencial</small></span>
+      </button>
       <div class="feature-row">
         <div><span class="feature-icon">✓</span><strong>Funciona offline</strong><small>Após o primeiro acesso</small></div>
         <div><span class="feature-icon">⌂</span><strong>Fica no aparelho</strong><small>Você controla o backup</small></div>

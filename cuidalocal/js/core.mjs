@@ -67,8 +67,26 @@ export function normalizeImportedData(value) {
       .slice(0, 10000)
       .map(item => normalizeItem(key, item));
   }
+  pruneMedicationRecords(base);
   base.meta.updatedAt = typeof safe.meta?.updatedAt === 'string' ? safe.meta.updatedAt : '';
   return base;
+}
+
+export function pruneMedicationRecords(data) {
+  const collections = data?.collections;
+  if (!isPlainObject(collections) || !Array.isArray(collections.registrosMedicamentos)) return [];
+  const validSchedules = new Map((Array.isArray(collections.medicamentos) ? collections.medicamentos : []).map(item => [
+    item.id,
+    new Set(Array.isArray(item.horarios) ? item.horarios : []),
+  ]));
+  const removed = [];
+  collections.registrosMedicamentos = collections.registrosMedicamentos.filter(record => {
+    const schedules = validSchedules.get(record.medicamentoId);
+    const keep = Boolean(schedules?.has(record.horaProgramada));
+    if (!keep) removed.push(record);
+    return keep;
+  });
+  return removed;
 }
 
 export function buildDailyOverview(data, date) {

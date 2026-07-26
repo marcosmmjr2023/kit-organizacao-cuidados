@@ -3,6 +3,7 @@ export const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 const BOT_PATTERN = /(bot|crawler|spider|slurp|headless|lighthouse|pagespeed|internetarchive|archive\.org|wayback|wget|curl|python-requests|facebookexternalhit|whatsapp|telegrambot|discordbot|preview)/i;
 const INTERNAL_SOURCES = new Set(["conteudo", "site", "interno"]);
+const EXTERNAL_CAMPAIGN_SOURCES = new Set(["compartilhamento"]);
 
 export function isLikelyBot({ webdriver = false, userAgent = "" } = {}) {
   return Boolean(webdriver) || BOT_PATTERN.test(userAgent);
@@ -15,7 +16,9 @@ export function classifySource({ search = "", referrer = "", origin = "" } = {})
     .replace(/[^a-z0-9-]/g, "-")
     .slice(0, 40);
   if (campaignSource) {
-    return { source: campaignSource, external: !INTERNAL_SOURCES.has(campaignSource) };
+    if (INTERNAL_SOURCES.has(campaignSource)) return { source: campaignSource, external: false };
+    if (EXTERNAL_CAMPAIGN_SOURCES.has(campaignSource)) return { source: campaignSource, external: true };
+    return { source: "external-campaign", external: true };
   }
   if (referrer) {
     try {

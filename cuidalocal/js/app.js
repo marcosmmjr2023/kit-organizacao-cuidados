@@ -6,13 +6,23 @@ import {
   calculateExpenseSummary,
   collectionToCsv,
   CSV_FIELDS,
+  pruneMedicationRecords,
   upsertMedicationRecord,
 } from './core.mjs';
+import {
+  readUiMode,
+  writeUiMode,
+  isSimpleRoute,
+  phoneHref,
+} from './ui-mode.mjs';
 
 const STORAGE_KEY = 'cuidalocal:v2:data';
 const titles = {
   painel: 'Painel diário', agenda: 'Agenda', medicamentos: 'Medicamentos', diario: 'Diário de cuidados',
   despesas: 'Despesas', contatos: 'Contatos', emergencia: 'Cartão de emergência', dados: 'Dados e backup',
+};
+const simpleTitles = {
+  painel: 'Início', agenda: 'Meu dia', medicamentos: 'Medicamentos', contatos: 'Pessoas para ligar', emergencia: 'Ajuda e emergência',
 };
 const el = id => document.getElementById(id);
 const main = el('conteudo');
@@ -20,6 +30,8 @@ let data = loadData();
 let route = location.hash.replace('#/', '') || 'painel';
 let selectedDate = todayISO();
 let deferredInstallPrompt = null;
+let uiMode = readUiMode();
+let offlineReady = false;
 
 function todayISO() {
   const now = new Date();
@@ -78,13 +90,47 @@ function removeItem(collection, id) {
   saveData('Registro excluído'); render();
 }
 
+function applyUiMode() {
+  const simple = uiMode === 'simple';
+  document.body.classList.toggle('simple-mode', simple);
+  el('safety-banner').innerHTML = simple
+    ? '<strong>Importante.</strong> Este aplicativo organiza informações. Em caso de emergência, peça ajuda.'
+    : '<strong>Ferramenta de organização.</strong> Não substitui avaliação, orientação ou atendimento de profissionais de saúde. Em emergência, procure o serviço local adequado.';
+  document.querySelectorAll('[data-ui-mode]').forEach(control => {
+    control.setAttribute('aria-checked', String(simple));
+    control.setAttribute('aria-label', simple ? 'Desativar tela simples e usar tela completa' : 'Ativar tela simples');
+    const status = control.querySelector('.mode-switch-copy small');
+    if (status && !control.classList.contains('onboarding-mode-switch')) status.textContent = simple ? 'Ligada' : 'Desligada';
+  });
+}
+
+function toggleUiMode() {
+  if (uiMode === 'simple' && !confirm('Abrir a tela completa, com mais opções e informações?')) return;
+  uiMode = uiMode === 'simple' ? 'full' : 'simple';
+  writeUiMode(undefined, uiMode);
+  route = 'painel';
+  selectedDate = todayISO();
+  history.replaceState(null, '', '#/painel');
+  applyUiMode();
+  render();
+  toast(uiMode === 'simple' ? 'Tela simples ativada' : 'Tela completa ativada');
+}
+
 function render() {
-  if (!titles[route]) route = 'painel';
-  el('page-title').textContent = titles[route];
+  const simple = uiMode === 'simple';
+  if (!titles[route] || (simple && !isSimpleRoute(route))) {
+    route = 'painel';
+    history.replaceState(null, '', '#/painel');
+  }
+  applyUiMode();
+  el('page-title').textContent = simple ? simpleTitles[route] : titles[route];
   el('today-label').textContent = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date());
+  el('simple-home').classList.toggle('hidden', !simple || route === 'painel');
+  el('simple-emergency-shortcut').classList.toggle('hidden', !simple || route === 'emergencia');
   document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.route === route));
-  const views = { painel: renderDashboard, agenda: renderAgenda, medicamentos: renderMedicamentos, diario: renderDiario, despesas: renderDespesas, contatos: renderContatos, emergencia: renderEmergency, dados: renderDados };
-  main.innerHTML = views[route]();
+  const fullViews = { painel: renderDashboard, agenda: renderAgenda, medicamentos: renderMedicamentos, diario: renderDiario, despesas: renderDespesas, contatos: renderContatos, emergencia: renderEmergency, dados: renderDados };
+  const simpleViews = { painel: renderSimpleDashboard, agenda: renderSimpleAgenda, medicamentos: renderSimpleMedicamentos, contatos: renderSimpleContacts, emergencia: renderSimpleEmergency };
+  main.innerHTML = (simple ? simpleViews : fullViews)[route]();
   main.focus({ preventScroll: true });
 }
 
@@ -110,6 +156,83 @@ function renderDashboard() {
         <div class="section-list">${overview.medicamentos.length ? overview.medicamentos.map(item => `<div class="list-item"><span class="time">${esc(item.hora)}</span><div class="list-content"><strong>${esc(item.nome)}</strong><p>${esc(item.orientacao || 'Consulte a orientação profissional cadastrada.')}</p></div><span class="badge ${item.status === 'administrado' ? 'done' : item.status !== 'pendente' ? 'warning' : ''}">${esc(labelStatus(item.status).toUpperCase())}</span><div class="list-actions">${item.status === 'pendente' ? `<button class="button secondary compact" data-register="${esc(item.medicamentoId)}" data-time="${esc(item.hora)}">Registrar</button>` : `<button class="button ghost compact" data-register="${esc(item.medicamentoId)}" data-time="${esc(item.hora)}">Revisar</button>`}</div></div>`).join('') : emptyState('Nenhum horário cadastrado', 'Cadastre somente informações fornecidas por um profissional.', '<button class="button secondary compact" data-route-go="medicamentos">Cadastrar</button>')}</div>
       </section>
     </div>`;
+}
+
+function renderSimpleDashboard() {
+  const overview = buildDailyOverview(data, todayISO());
+  const name = data.profile.comoChamar || data.profile.nome || '';
+  const next = overview.agenda.find(item => !item.concluido) || overview.agenda[0];
+  const pending = overview.medicamentos.filter(item => item.status === 'pendente').length;
+  return `<div class="simple-dashboard">
+    <section class="simple-greeting" aria-labelledby="simple-greeting-title">
+      <p class="simple-kicker">${new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())}</p>
+      <h2 id="simple-greeting-title">${name ? `Olá, ${esc(name)}.` : 'Olá.'}</h2>
+      <p>Escolha uma opção abaixo.<span class="simple-reassurance"> Você pode voltar ao início a qualquer momento.</span></p>
+    </section>
+    <nav class="simple-action-grid" aria-label="Ações principais da tela simples">
+      <button class="simple-action" data-route-go="agenda"><span class="simple-icon" aria-hidden="true">▣</span><span><strong>Meu dia</strong><small>Ver o que está marcado para hoje</small></span></button>
+      <button class="simple-action" data-route-go="medicamentos"><span class="simple-icon" aria-hidden="true">＋</span><span><strong>Medicamentos</strong><small>Ver informações já cadastradas</small></span></button>
+      <button class="simple-action" data-route-go="contatos"><span class="simple-icon" aria-hidden="true">☎</span><span><strong>Pessoas para ligar</strong><small>Encontrar um contato importante</small></span></button>
+      <button class="simple-action emergency" data-route-go="emergencia"><span class="simple-icon" aria-hidden="true">!</span><span><strong>Ajuda e emergência</strong><small>Abrir contatos e informações importantes</small></span></button>
+    </nav>
+    <section class="simple-summary" aria-labelledby="simple-summary-title">
+      <h3 id="simple-summary-title">Resumo de hoje</h3>
+      <div class="simple-summary-grid">
+        <div><span class="simple-summary-icon" aria-hidden="true">▣</span><p><strong>${next ? `${esc(next.hora || 'Sem horário')} — ${esc(next.titulo)}` : 'Nenhum compromisso cadastrado'}</strong><span>${next?.local ? esc(next.local) : 'Consulte a tela “Meu dia” para mais detalhes.'}</span></p></div>
+        <div><span class="simple-summary-icon" aria-hidden="true">＋</span><p><strong>${overview.medicamentos.length} horário(s) cadastrado(s)</strong><span>${overview.medicamentos.length ? `${pending} sem confirmação hoje.` : 'Nenhum horário para mostrar hoje.'}</span></p></div>
+      </div>
+    </section>
+  </div>`;
+}
+
+function renderSimpleAgenda() {
+  const items = data.collections.agenda
+    .filter(item => item.data === todayISO())
+    .slice()
+    .sort((a, b) => String(a.hora || '').localeCompare(String(b.hora || '')));
+  return `<div class="simple-page">
+    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">▣</span><div><h2>Meu dia</h2><p>Compromissos cadastrados para hoje.</p></div></header>
+    <section class="simple-list" aria-label="Compromissos de hoje">${items.length ? items.map(item => `<article class="simple-list-card"><time>${esc(item.hora || 'Sem horário')}</time><div><h3>${esc(item.titulo)}</h3>${item.local ? `<p>${esc(item.local)}</p>` : ''}<strong class="simple-status">${item.concluido ? 'Concluído' : 'Ainda não concluído'}</strong></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">✓</span><h3>Nada marcado para hoje</h3><p>Você pode ficar tranquilo. Não há compromissos cadastrados nesta data.</p></div>`}</section>
+  </div>`;
+}
+
+function renderSimpleMedicamentos() {
+  const overview = buildDailyOverview(data, todayISO());
+  return `<div class="simple-page">
+    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">＋</span><div><h2>Medicamentos</h2><p>Somente informações cadastradas anteriormente por você ou por quem cuida.</p></div></header>
+    <div class="simple-safety" role="note"><strong>Não use esta tela para decidir o que tomar.</strong><span>Se houver dúvida, fale com a pessoa responsável ou com um profissional de saúde.</span></div>
+    <section class="simple-list" aria-label="Horários cadastrados">${overview.medicamentos.length ? overview.medicamentos.map(item => `<article class="simple-list-card medication"><time>${esc(item.hora)}</time><div><h3>${esc(item.nome)}</h3><p>${esc(item.orientacao || 'Orientação não informada. Consulte a pessoa responsável.')}</p><strong class="simple-status">Registro de hoje: ${esc(labelStatus(item.status))}</strong></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">＋</span><h3>Nenhuma informação cadastrada</h3><p>Peça ajuda a uma pessoa responsável para usar a tela completa.</p></div>`}</section>
+  </div>`;
+}
+
+function renderSimpleContacts() {
+  const items = data.collections.contatos.slice().sort((a, b) => (Number(b.favorito) - Number(a.favorito)) || String(a.nome).localeCompare(String(b.nome)));
+  return `<div class="simple-page">
+    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">☎</span><div><h2>Pessoas para ligar</h2><p>Toque no nome para iniciar uma ligação.</p></div></header>
+    ${data.settings.demoLoaded ? '<div class="simple-safety" role="note"><strong>Estes contatos são fictícios.</strong><span>Não é possível ligar usando os dados de demonstração.</span></div>' : ''}
+    <section class="simple-contact-list" aria-label="Contatos importantes">${items.length ? items.map(item => {
+      const href = data.settings.demoLoaded ? '' : phoneHref(item.telefone);
+      return `<article class="simple-contact-card"><span class="simple-avatar" aria-hidden="true">${esc(initials(item.nome))}</span><div><h3>${esc(item.nome)}</h3><p>${esc(item.relacao || 'Contato importante')}</p><strong>${esc(item.telefone || 'Telefone não informado')}</strong></div>${href ? `<a class="simple-call" href="${esc(href)}" aria-label="Ligar para ${esc(item.nome)}"><span aria-hidden="true">☎</span><span>Ligar</span></a>` : '<span class="simple-call unavailable">Sem ligação</span>'}</article>`;
+    }).join('') : `<div class="simple-empty"><span aria-hidden="true">☎</span><h3>Nenhum contato cadastrado</h3><p>Peça a uma pessoa responsável para cadastrar contatos na tela completa.</p></div>`}</section>
+  </div>`;
+}
+
+function renderSimpleEmergency() {
+  const e = data.emergency;
+  const contacts = [
+    { name: e.contato1Nome, phone: e.contato1Telefone, label: 'Contato principal' },
+    { name: e.contato2Nome, phone: e.contato2Telefone, label: 'Contato alternativo' },
+  ].filter(item => item.name || item.phone);
+  return `<div class="simple-page simple-emergency-page">
+    <header class="simple-page-header emergency"><span class="simple-page-icon" aria-hidden="true">!</span><div><h2>Ajuda e emergência</h2><p>Use os contatos abaixo para pedir ajuda.</p></div></header>
+    <div class="simple-urgent" role="alert"><strong>Se você estiver em perigo agora</strong><span>Use o telefone para ligar para o serviço de emergência da sua região.</span></div>
+    ${data.settings.demoLoaded ? '<div class="simple-safety" role="note"><strong>Dados de demonstração.</strong><span>Os números abaixo são fictícios e não fazem ligações.</span></div>' : ''}
+    <section class="simple-contact-list" aria-label="Contatos de emergência">${contacts.length ? contacts.map(item => {
+      const href = data.settings.demoLoaded ? '' : phoneHref(item.phone);
+      return `<article class="simple-contact-card emergency-contact"><span class="simple-avatar" aria-hidden="true">!</span><div><p>${esc(item.label)}</p><h3>${esc(item.name || 'Contato')}</h3><strong>${esc(item.phone || 'Telefone não informado')}</strong></div>${href ? `<a class="simple-call emergency-call" href="${esc(href)}" aria-label="Ligar para ${esc(item.name || 'contato de emergência')}"><span aria-hidden="true">☎</span><span>Ligar agora</span></a>` : '<span class="simple-call unavailable">Sem ligação</span>'}</article>`;
+    }).join('') : `<div class="simple-empty warning"><span aria-hidden="true">!</span><h3>Nenhum contato de emergência cadastrado</h3><p>Peça a uma pessoa de confiança para configurar o cartão na tela completa.</p></div>`}</section>
+    <section class="simple-info-card" aria-labelledby="simple-card-title"><h3 id="simple-card-title">Minhas informações importantes</h3><dl><div><dt>Nome</dt><dd>${esc(e.comoChamar || e.nome || 'Não informado')}</dd></div><div><dt>Alergias informadas</dt><dd>${esc(e.alergias || 'Não informado')}</dd></div><div><dt>Condições importantes</dt><dd>${esc(e.condicoesImportantes || 'Não informado')}</dd></div><div><dt>Medicamentos em uso</dt><dd>${esc(e.medicamentosEmUso || 'Não informado')}</dd></div></dl></section>
+  </div>`;
 }
 
 function renderAgenda() {
@@ -197,6 +320,7 @@ function submitEntity(form) {
   if (collection === 'despesas') values.valor = Math.max(0, Number(String(values.valor).replace(',','.')) || 0);
   const item = { ...(existing || {}), ...values, id: existing?.id || uid(), createdAt: existing?.createdAt || nowISO() };
   if (existing) Object.assign(existing,item); else data.collections[collection].push(item);
+  if (collection === 'medicamentos') pruneMedicationRecords(data);
   saveData('Registro salvo'); closeModal(); render();
 }
 function openMedicationRecord(medicationId, time) {
@@ -236,6 +360,7 @@ function finishOnboarding(useDemo) {
 }
 
 function handleAction(action) {
+  if(action==='simple-home'){route='painel';history.replaceState(null,'','#/painel');render();}
   if(action==='quick-diary') openEntityForm('diario');
   if(action==='print') window.print();
   if(action==='edit-emergency') openEmergencyForm();
@@ -248,6 +373,7 @@ function handleAction(action) {
 
 document.addEventListener('click',event=>{
   const target=event.target.closest('button,[data-action]'); if(!target)return;
+  if(target.hasAttribute('data-ui-mode'))return toggleUiMode();
   if(target.matches('[data-close]'))return closeModal();
   if(target.dataset.route){route=target.dataset.route;location.hash=`/${route}`;el('sidebar').classList.remove('open');render();}
   if(target.dataset.routeGo){route=target.dataset.routeGo;location.hash=`/${route}`;render();}
@@ -275,8 +401,18 @@ el('backup-file').addEventListener('change',async event=>{
   try{const parsed=JSON.parse(await file.text());const result=validateBackup(parsed);if(!result.valid)throw new Error(result.errors.join(' '));if(confirm('Restaurar este backup? Os dados atuais serão substituídos.')){data=normalizeImportedData(parsed);data.settings.onboardingComplete=true;saveData('Backup restaurado');render();}}catch(error){toast(`Backup inválido: ${error.message}`,true);}finally{event.target.value='';}
 });
 window.addEventListener('hashchange',()=>{route=location.hash.replace('#/','')||'painel';render();});
-window.addEventListener('online',()=>{el('offline-status').textContent='Disponível offline';});
-window.addEventListener('offline',()=>{el('offline-status').textContent='Você está offline';});
+function updateOfflineStatus(message = '', state = 'ready') {
+  const node = el('offline-status');
+  node.classList.toggle('pending', state === 'pending');
+  node.classList.toggle('error', state === 'error');
+  if (message) {
+    node.textContent = message;
+    return;
+  }
+  node.textContent = navigator.onLine ? 'Disponível offline' : 'Você está offline';
+}
+window.addEventListener('online',()=>{updateOfflineStatus(offlineReady ? '' : 'Preparando offline', offlineReady ? 'ready' : 'pending');});
+window.addEventListener('offline',()=>{updateOfflineStatus(offlineReady ? '' : 'Você está offline; offline ainda não confirmado', offlineReady ? 'ready' : 'pending');});
 window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstallPrompt=event;if(route==='painel')render();});
 window.addEventListener('keydown',event=>{if(event.key==='Escape')closeModal();});
 
@@ -285,5 +421,12 @@ ack.addEventListener('change',()=>{el('start-empty').disabled=!ack.checked;el('s
 el('start-empty').addEventListener('click',()=>finishOnboarding(false));
 el('start-demo').addEventListener('click',()=>finishOnboarding(true));
 if(!data.settings.onboardingComplete)el('onboarding').classList.remove('hidden');
-if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+if('serviceWorker'in navigator) {
+  navigator.serviceWorker.register('./sw.js')
+    .then(()=>navigator.serviceWorker.ready)
+    .then(()=>{offlineReady=true;updateOfflineStatus();})
+    .catch(()=>{offlineReady=false;updateOfflineStatus('Offline não preparado', 'error');});
+} else {
+  updateOfflineStatus('Offline não disponível neste navegador', 'error');
+}
 render();

@@ -1,11 +1,12 @@
 const CACHE_PREFIX = 'cuidalocal-';
-const CACHE = `${CACHE_PREFIX}v2.0.2`;
+const CACHE = `${CACHE_PREFIX}v2.1.0`;
 const APP_SHELL = [
   './',
   './index.html',
   './css/styles.css',
   './js/app.js',
   './js/core.mjs',
+  './js/ui-mode.mjs',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'

@@ -60,7 +60,7 @@
       <div><strong id="v2-download-click-cuidalocal-zip">—</strong><br>cliques para baixar o ZIP</div>
       <div><strong id="v2-download-click-cuidalocal-apk">—</strong><br>cliques para baixar o APK</div>
     </div>
-    <p>Downloads servidos após o baseline de publicação: ZIP <strong id="cuidalocal-release-download">—</strong> · APK Android <strong id="cuidalocal-apk-release-download">—</strong>. Os baselines brutos de 1 ZIP e 3 APKs incluem verificações internas e não são apresentados como demanda. Clique ou download não comprova pagamento.</p>
+    <p>Downloads servidos após o baseline de publicação: ZIP <strong id="cuidalocal-release-download">—</strong> · APK Android <strong id="cuidalocal-apk-release-download">—</strong>. Os baselines brutos de 3 ZIPs e 5 APKs incluem verificações internas e acessos coincidentes com o arquivamento externo; não são apresentados como demanda. Clique ou download não comprova pagamento.</p>
   </section>
 
   <section class="legacy">
@@ -99,8 +99,8 @@
   const cuidalocalReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/cuidalocal-v1.2.0";
   const internalKey = "kit-cuidados-analytics-internal-v2";
   const freeDownloadBaseline = 5;
-  const cuidalocalZipBaseline = 1;
-  const cuidalocalApkBaseline = 3;
+  const cuidalocalZipBaseline = 3;
+  const cuidalocalApkBaseline = 5;
   let storageAvailable = true;
 
   function safeLocalGet(key) {

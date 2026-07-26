@@ -1,0 +1,9 @@
+{
+  "appId": "com.cuidalocal.app",
+  "appName": "CuidaLocal",
+  "webDir": "../cuidalocal",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#f3f7f5"
+  }
+}

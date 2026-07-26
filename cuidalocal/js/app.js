@@ -17,7 +17,16 @@ import {
   phoneHref,
 } from './ui-mode.mjs';
 
+import {
+  buildAlarmCalendar,
+  buildNativeAlarmPlan,
+  collectDueReminders,
+} from './alarms.mjs';
+
 const STORAGE_KEY = 'cuidalocal:v2:data';
+const ALARM_ENABLED_KEY = 'cuidalocal:v2:alarms-enabled';
+const ALARM_HISTORY_KEY = 'cuidalocal:v2:alarm-history';
+const NATIVE_ALARM_CHANNEL = 'cuidalocal-alarmes';
 const titles = {
   painel: 'Painel diário', agenda: 'Agenda', medicamentos: 'Medicamentos', diario: 'Diário de cuidados',
   despesas: 'Despesas', contatos: 'Contatos', emergencia: 'Cartão de emergência', dados: 'Dados e backup',
@@ -33,6 +42,9 @@ let selectedDate = todayISO();
 let deferredInstallPrompt = null;
 let uiMode = readUiMode();
 let offlineReady = false;
+let currentAlarmReminders = [];
+let alarmAudioContext = null;
+let nativeAlarmSyncPending = false;
 
 function todayISO() {
   const now = new Date();
@@ -58,6 +70,7 @@ function saveData(message = 'Alterações salvas') {
   try {
     data.meta.updatedAt = nowISO();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    syncNativeAlarms();
     el('save-state').textContent = 'Salvo agora neste dispositivo';
     toast(message);
     setTimeout(() => { el('save-state').textContent = 'Salvo neste dispositivo'; }, 1800);
@@ -77,6 +90,184 @@ function download(filename, content, type) {
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
+
+function localNotificationsPlugin() { return globalThis.Capacitor?.Plugins?.LocalNotifications || null; }
+function isNativeAlarmApp() { return Boolean(localNotificationsPlugin()); }
+function alarmsEnabled() {
+  try { return localStorage.getItem(ALARM_ENABLED_KEY) === 'true'; }
+  catch { return false; }
+}
+function setAlarmsEnabled(value) {
+  try { localStorage.setItem(ALARM_ENABLED_KEY, String(Boolean(value))); }
+  catch { /* The current session can still show a reminder. */ }
+}
+function readAlarmHistory() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(ALARM_HISTORY_KEY) || '{}');
+    const cutoff = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    return Object.fromEntries(Object.entries(parsed).filter(([, timestamp]) => Number(timestamp) >= cutoff));
+  } catch { return {}; }
+}
+function acknowledgeCurrentAlarms() {
+  const history = readAlarmHistory();
+  const acknowledgedAt = Date.now();
+  currentAlarmReminders.forEach(item => { history[item.key] = acknowledgedAt; });
+  try { localStorage.setItem(ALARM_HISTORY_KEY, JSON.stringify(history)); } catch { /* Keep working without persistence. */ }
+  currentAlarmReminders = [];
+  const host = el('alarm-dialog');
+  host.classList.add('hidden');
+  host.innerHTML = '';
+  main.focus({ preventScroll: true });
+}
+function prepareAlarmSound() {
+  try {
+    const Context = globalThis.AudioContext || globalThis.webkitAudioContext;
+    if (!Context) return;
+    alarmAudioContext ||= new Context();
+    alarmAudioContext.resume?.();
+  } catch { /* Sound is reinforcement only. */ }
+}
+function playAlarmSignal() {
+  navigator.vibrate?.([350, 180, 350, 180, 500]);
+  if (!alarmAudioContext) return;
+  for (const offset of [0, .45, .9]) {
+    const oscillator = alarmAudioContext.createOscillator();
+    const gain = alarmAudioContext.createGain();
+    oscillator.frequency.value = 880;
+    gain.gain.setValueAtTime(.0001, alarmAudioContext.currentTime + offset);
+    gain.gain.exponentialRampToValueAtTime(.28, alarmAudioContext.currentTime + offset + .02);
+    gain.gain.exponentialRampToValueAtTime(.0001, alarmAudioContext.currentTime + offset + .28);
+    oscillator.connect(gain).connect(alarmAudioContext.destination);
+    oscillator.start(alarmAudioContext.currentTime + offset);
+    oscillator.stop(alarmAudioContext.currentTime + offset + .3);
+  }
+}
+async function showWebNotifications(reminders) {
+  if (!('Notification' in globalThis) || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    await Promise.all(reminders.map(item => registration.showNotification(item.kind === 'medicamento' ? `Medicamento — ${item.time}` : `Compromisso — ${item.time}`, {
+      body: `${item.title}. ${item.body}`,
+      tag: item.key,
+      renotify: true,
+      requireInteraction: true,
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+      data: { route: item.kind === 'medicamento' ? 'medicamentos' : 'agenda' },
+    })));
+  } catch { /* The in-app alert remains available. */ }
+}
+function showDueAlarm(reminders) {
+  if (!reminders.length || currentAlarmReminders.length) return;
+  currentAlarmReminders = reminders;
+  const host = el('alarm-dialog');
+  host.innerHTML = `<section class="alarm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="alarm-dialog-title" aria-describedby="alarm-dialog-copy">
+    <div class="alarm-symbol" aria-hidden="true">⏰</div>
+    <p class="alarm-now">${reminders.some(item => item.lateMinutes > 0) ? 'LEMBRETE PENDENTE' : 'AGORA'}</p>
+    <h2 id="alarm-dialog-title">${reminders.length === 1 ? esc(reminders[0].title) : `${reminders.length} lembretes`}</h2>
+    <div id="alarm-dialog-copy" class="alarm-items">${reminders.map(item => `<article><strong>${esc(item.time)} — ${esc(item.kind === 'medicamento' ? 'Medicamento cadastrado' : 'Compromisso')}</strong><span>${esc(item.title)}</span><p>${esc(item.body)}</p>${item.lateMinutes ? `<small>Atrasado ${item.lateMinutes} minuto(s).</small>` : ''}</article>`).join('')}</div>
+    <button class="alarm-acknowledge" data-action="alarm-acknowledge">Entendi</button>
+    <button class="alarm-help" data-route-go="emergencia">Preciso de ajuda</button>
+  </section>`;
+  host.classList.remove('hidden');
+  host.querySelector('.alarm-acknowledge')?.focus();
+  playAlarmSignal();
+  showWebNotifications(reminders);
+}
+function checkDueAlarms() {
+  if (!alarmsEnabled() || !data.settings.onboardingComplete || currentAlarmReminders.length) return;
+  const history = readAlarmHistory();
+  const reminders = collectDueReminders(data, { acknowledgedKeys: new Set(Object.keys(history)), lookbackMinutes: 15 });
+  showDueAlarm(reminders);
+}
+function alarmPanel(simple = false) {
+  const count = buildNativeAlarmPlan(data).length;
+  const enabled = alarmsEnabled();
+  const native = isNativeAlarmApp();
+  return `<section class="${simple ? 'simple-alarm-panel' : 'card span-12 alarm-panel'}" aria-labelledby="alarm-panel-title">
+    <div><span class="alarm-panel-icon" aria-hidden="true">⏰</span><h3 id="alarm-panel-title">Alarmes e lembretes</h3></div>
+    <p>${native ? 'O aplicativo Android pode avisar mesmo fechado e sem internet.' : 'Enquanto esta PWA estiver aberta, ela mostra e toca os lembretes ativados.'}</p>
+    <div class="alarm-panel-actions">
+      <button class="${simple ? 'simple-alarm-button' : 'button primary'}" data-action="alarm-enable">${enabled ? 'Atualizar alarmes' : 'Ativar alarmes'}</button>
+      ${enabled ? `<button class="${simple ? 'simple-alarm-button secondary' : 'button secondary'}" data-action="alarm-disable">Desativar alarmes</button>` : ''}
+      ${native ? '' : `<button class="${simple ? 'simple-alarm-button secondary' : 'button secondary'}" data-action="alarm-calendar-export">Adicionar ao calendário do aparelho</button>`}
+    </div>
+    <p class="alarm-persistent-copy">${native
+      ? `<strong>${count} alarme(s) local(is) programado(s).</strong> Eles são atualizados ao salvar, editar ou excluir horários. Mantenha as permissões do Android ativas.`
+      : `<strong>${count} alarme(s) com horário cadastrado.</strong> Os alarmes do calendário continuam mesmo com o CuidaLocal fechado. Ao alterar ou excluir horários, importe novamente e substitua o calendário “CuidaLocal”.`}</p>
+  </section>`;
+}
+async function syncNativeAlarms() {
+  const plugin = localNotificationsPlugin();
+  if (!plugin || !alarmsEnabled() || nativeAlarmSyncPending) return;
+  nativeAlarmSyncPending = true;
+  try {
+    const pending = await plugin.getPending();
+    if (pending.notifications?.length) await plugin.cancel({ notifications: pending.notifications.map(item => ({ id: item.id })) });
+    const notifications = buildNativeAlarmPlan(data).map(item => ({
+      id: item.id,
+      title: item.title,
+      body: item.body,
+      channelId: NATIVE_ALARM_CHANNEL,
+      schedule: item.schedule.at ? { at: new Date(item.schedule.at), allowWhileIdle: true } : item.schedule,
+      extra: item.extra,
+      ongoing: false,
+      autoCancel: true,
+    }));
+    if (notifications.length) await plugin.schedule({ notifications });
+  } catch (error) {
+    toast(`Não foi possível atualizar os alarmes do Android: ${error.message || error}`, true);
+  } finally { nativeAlarmSyncPending = false; }
+}
+async function enableAlarms() {
+  prepareAlarmSound();
+  const plugin = localNotificationsPlugin();
+  if (plugin) {
+    try {
+      let permission = await plugin.checkPermissions();
+      if (permission.display !== 'granted') permission = await plugin.requestPermissions();
+      if (permission.display !== 'granted') throw new Error('Permissão de notificações não concedida');
+      await plugin.createChannel({ id: NATIVE_ALARM_CHANNEL, name: 'Alarmes do CuidaLocal', description: 'Compromissos e horários cadastrados', importance: 5, visibility: 1, vibration: true });
+      if (plugin.checkExactNotificationSetting && plugin.changeExactNotificationSetting) {
+        const exact = await plugin.checkExactNotificationSetting();
+        if (exact.exact_alarm !== 'granted') await plugin.changeExactNotificationSetting();
+      }
+      setAlarmsEnabled(true);
+      await syncNativeAlarms();
+      toast('Alarmes persistentes ativados no Android');
+      render();
+      return;
+    } catch (error) { toast(`Não foi possível ativar: ${error.message || error}`, true); return; }
+  }
+  let notificationGranted = false;
+  if ('Notification' in globalThis) {
+    try { notificationGranted = (await Notification.requestPermission()) === 'granted'; } catch { /* Continue with visual alerts. */ }
+  }
+  setAlarmsEnabled(true);
+  toast(notificationGranted ? 'Avisos ativados enquanto a PWA estiver aberta' : 'Lembretes visuais ativados; use o calendário para avisos com a PWA fechada');
+  render();
+  checkDueAlarms();
+}
+async function disableAlarms() {
+  setAlarmsEnabled(false);
+  if (currentAlarmReminders.length) acknowledgeCurrentAlarms();
+  const plugin = localNotificationsPlugin();
+  if (plugin) {
+    try {
+      const pending = await plugin.getPending();
+      if (pending.notifications?.length) await plugin.cancel({ notifications: pending.notifications.map(item => ({ id: item.id })) });
+    } catch (error) { toast(`Não foi possível cancelar todos os alarmes: ${error.message || error}`, true); return; }
+  }
+  toast('Alarmes desativados');
+  render();
+}
+function exportAlarmCalendar() {
+  const calendar = buildAlarmCalendar(data);
+  if (!calendar.includes('BEGIN:VEVENT')) { toast('Cadastre ao menos um compromisso ou medicamento com horário.', true); return; }
+  download('cuidalocal-alarmes.ics', calendar, 'text/calendar;charset=utf-8');
+  showModal(`<div class="modal-header"><div><h2 id="modal-title">Adicionar alarmes ao calendário</h2><p class="modal-subtitle">O arquivo cuidalocal-alarmes.ics foi preparado.</p></div><button class="icon-button" data-close aria-label="Fechar">×</button></div><div class="notice info"><strong>Para funcionar com o CuidaLocal fechado:</strong><ol><li>Abra o arquivo baixado.</li><li>Escolha adicionar ou importar no calendário do aparelho.</li><li>Use um calendário chamado “CuidaLocal”.</li></ol></div><div class="notice warning" style="margin-top:16px"><strong>Se alterar ou excluir um horário:</strong><p>Remova ou substitua o calendário “CuidaLocal” e importe um arquivo novo, para não manter alarmes antigos.</p></div><div class="modal-actions"><button class="button primary" data-close>Entendi</button></div>`);
+}
+
 function emptyState(title, copy, action = '') {
   return `<div class="empty-state"><div class="empty-icon">＋</div><strong>${esc(title)}</strong><span>${esc(copy)}</span>${action ? `<div style="margin-top:14px">${action}</div>` : ''}</div>`;
 }
@@ -151,6 +342,7 @@ function renderDashboard() {
   return `
     ${deferredInstallPrompt ? `<div class="install-note no-print"><span><strong>Instale o CuidaLocal</strong><br>Abra como aplicativo e tenha acesso rápido, inclusive offline.</span><button class="button secondary compact" data-action="install">Instalar</button></div>` : ''}
     <div class="cards-grid">
+      ${alarmPanel(false)}
       <section class="card span-12 welcome-card"><span class="badge">VISÃO DO DIA</span><h2>Olá, ${esc(name)}.</h2><p>Aqui está o resumo de ${selectedDate === todayISO() ? 'hoje' : fmtDate(selectedDate)}. Registre somente fatos observados e orientações profissionais já recebidas.</p><label class="field" style="max-width:180px"><span style="color:#fff">Consultar outra data</span><input id="dashboard-date" type="date" value="${esc(selectedDate)}"></label></section>
       <section class="card span-12"><div class="metric-row"><div class="metric-box"><strong>${openAgenda}</strong><span>compromisso(s) pendente(s)</span></div><div class="metric-box"><strong>${doneMeds}/${overview.medicamentos.length}</strong><span>registro(s) administrativo(s)</span></div><div class="metric-box"><strong>${dayDiary}</strong><span>anotação(ões) no diário</span></div></div></section>
       <section class="card span-7"><div class="card-header"><div><h3>Agenda do dia</h3><p>Compromissos e tarefas organizacionais</p></div><button class="button ghost compact" data-route-go="agenda">Ver agenda</button></div>
@@ -177,6 +369,7 @@ function renderSimpleDashboard() {
       <h2 id="simple-greeting-title">${name ? `Olá, ${esc(name)}.` : 'Olá.'}</h2>
       <p>Escolha uma opção abaixo.<span class="simple-reassurance"> Você pode voltar ao início a qualquer momento.</span></p>
     </section>
+    ${alarmPanel(true)}
     <nav class="simple-action-grid" aria-label="Ações principais da tela simples">
       <button class="simple-action" data-route-go="agenda"><span class="simple-icon" aria-hidden="true">▣</span><span><strong>Meu dia</strong><small>Ver ou cadastrar compromissos</small></span></button>
       <button class="simple-action" data-route-go="medicamentos"><span class="simple-icon" aria-hidden="true">＋</span><span><strong>Medicamentos</strong><small>Ver ou cadastrar medicamentos</small></span></button>
@@ -393,12 +586,16 @@ function finishOnboarding(useDemo) {
 function handleAction(action) {
   if(action==='simple-home'){route='painel';history.replaceState(null,'','#/painel');render();}
   if(action==='quick-diary') openEntityForm('diario');
+  if(action==='alarm-enable') enableAlarms();
+  if(action==='alarm-disable') disableAlarms();
+  if(action==='alarm-calendar-export') exportAlarmCalendar();
+  if(action==='alarm-acknowledge') acknowledgeCurrentAlarms();
   if(action==='print') window.print();
   if(action==='edit-emergency') openEmergencyForm();
   if(action==='backup-export') download(`cuidalocal-backup-${todayISO()}.json`,JSON.stringify(data,null,2),'application/json;charset=utf-8');
   if(action==='backup-import') el('backup-file').click();
   if(action==='csv-export'){const collection=el('csv-collection').value;download(`cuidalocal-${collection}-${todayISO()}.csv`,collectionToCsv(data.collections[collection],CSV_FIELDS[collection]),'text/csv;charset=utf-8');}
-  if(action==='clear-data'&&confirm('Tem certeza? Todos os dados do CuidaLocal neste navegador serão apagados permanentemente.')){localStorage.removeItem(STORAGE_KEY);data=createEmptyData();el('onboarding').classList.remove('hidden');render();toast('Dados apagados');}
+  if(action==='clear-data'&&confirm('Tem certeza? Todos os dados do CuidaLocal neste navegador serão apagados permanentemente.')){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(ALARM_HISTORY_KEY);data=createEmptyData();syncNativeAlarms();el('onboarding').classList.remove('hidden');render();toast('Dados apagados');}
   if(action==='install'&&deferredInstallPrompt){deferredInstallPrompt.prompt();deferredInstallPrompt.userChoice.finally(()=>{deferredInstallPrompt=null;render();});}
 }
 
@@ -407,7 +604,7 @@ document.addEventListener('click',event=>{
   if(target.hasAttribute('data-ui-mode'))return toggleUiMode();
   if(target.matches('[data-close]'))return closeModal();
   if(target.dataset.route){route=target.dataset.route;location.hash=`/${route}`;el('sidebar').classList.remove('open');render();}
-  if(target.dataset.routeGo){route=target.dataset.routeGo;location.hash=`/${route}`;render();}
+  if(target.dataset.routeGo){if(target.closest('#alarm-dialog'))acknowledgeCurrentAlarms();route=target.dataset.routeGo;location.hash=`/${route}`;render();}
   if(target.dataset.action)handleAction(target.dataset.action);
   if(target.dataset.add)openEntityForm(target.dataset.add);
   if(target.dataset.edit){const [collection,id]=target.dataset.edit.split(':');openEntityForm(collection,id);}
@@ -460,4 +657,21 @@ if('serviceWorker'in navigator) {
 } else {
   updateOfflineStatus('Offline não disponível neste navegador', 'error');
 }
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkDueAlarms(); });
+window.addEventListener('focus', checkDueAlarms);
+setInterval(checkDueAlarms, 15000);
+const nativeNotifications = localNotificationsPlugin();
+if (nativeNotifications) {
+  nativeNotifications.addListener?.('localNotificationActionPerformed', event => {
+    const destination = event.notification?.extra?.route;
+    if (destination && titles[destination]) {
+      route = destination;
+      location.hash = `/${destination}`;
+      render();
+    }
+  });
+  syncNativeAlarms();
+}
 render();
+checkDueAlarms();

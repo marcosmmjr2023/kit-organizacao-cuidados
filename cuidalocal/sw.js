@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'cuidalocal-';
-const CACHE = `${CACHE_PREFIX}v2.1.1`;
+const CACHE = `${CACHE_PREFIX}v2.2.0`;
 const APP_SHELL = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const APP_SHELL = [
   './js/app.js',
   './js/core.mjs',
   './js/ui-mode.mjs',
+  './js/alarms.mjs',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -31,4 +32,15 @@ self.addEventListener('fetch', event => {
       return response;
     }).catch(() => event.request.mode === 'navigate' ? caches.match('./index.html') : Response.error()))
   );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const route = event.notification.data?.route || 'painel';
+  const target = new URL(`./#/${route}`, self.registration.scope).href;
+  event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+    const existing = windows[0];
+    if (existing) return existing.focus().then(client => client.navigate(target));
+    return clients.openWindow(target);
+  }));
 });

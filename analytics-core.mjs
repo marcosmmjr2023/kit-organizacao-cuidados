@@ -2,7 +2,7 @@ export const INTERNAL_KEY = "kit-cuidados-analytics-internal-v2";
 export const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 
 const BOT_PATTERN = /(bot|crawler|spider|slurp|headless|lighthouse|pagespeed|internetarchive|archive\.org|wayback|wget|curl|python-requests|facebookexternalhit|whatsapp|telegrambot|discordbot|preview)/i;
-const INTERNAL_SOURCES = new Set(["conteudo", "site", "interno"]);
+const INTERNAL_SOURCES = new Set(["conteudo", "content", "site", "interno"]);
 const EXTERNAL_CAMPAIGN_SOURCES = new Set(["compartilhamento"]);
 
 export function isLikelyBot({ webdriver = false, userAgent = "" } = {}) {

@@ -17,6 +17,7 @@ Este registro separa publicação, divulgação, tráfego e venda. Uma ação s�
 | Data UTC | Camada | Ação | Evidência | Estado |
 |---|---|---|---|---|
 | 2026-07-26 | Audiência externa | Submissão do CuidaLocal à lista `hemanth/awesome-pwa`, seção Health and Lifestyle, repositório com cerca de 4,8 mil estrelas | https://github.com/hemanth/awesome-pwa/pull/450 | PR aberto; ainda não aceito |
+| 2026-07-26 | Audiência externa | Submissão à lista `0dataapp/awesome-0data`, que alimenta o diretório público 0data.app de aplicativos sem retenção central dos dados | https://github.com/0dataapp/awesome-0data/pull/7 | PR aberto; ainda não aceito |
 | 2026-07-26 | Descoberta | Descrição e tópicos do repositório ampliados com `pwa`, `android`, `offline-first`, `local-first`, `accessibility`, `medication-reminder` e `caregiver-app` | https://github.com/marcosmmjr2023/kit-organizacao-cuidados | Publicado |
 | 2026-07-26 | Medição | Dashboard atualizado para a versão 1.2.0, separando cliques/downloads do ZIP e APK e subtraindo o baseline não atribuível | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/metricas.html | Publicado e verificado |
 | 2026-07-26 | Descoberta | PWA adicionada ao sitemap e três URLs submetidas ao protocolo IndexNow | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/sitemap.xml | HTTP 202 — aceita para processamento; não prova ranking nem audiência |

@@ -23,6 +23,14 @@ Este registro separa publicação, divulgação, tráfego e venda. Uma ação s�
 | 2026-07-26 | Descoberta | PWA adicionada ao sitemap e três URLs submetidas ao protocolo IndexNow | https://marcosmmjr2023.github.io/kit-organizacao-cuidados/sitemap.xml | HTTP 202 — aceita para processamento; não prova ranking nem audiência |
 | 2026-07-26 | Distribuição externa durável | Página comercial e PWA enviadas ao Internet Archive | https://web.archive.org/web/https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html | Duas respostas HTTP 200; possíveis acessos automatizados separados do baseline |
 
+## Resultados comprovados após as ações
+
+- O repositório recebeu sua primeira estrela às `2026-07-26T22:18:10Z`; a conta e o horário são públicos no GitHub, mas a origem exata da descoberta não é comprovável.
+- Downloads após o baseline ajustado: 0 ZIPs e 0 APKs.
+- Funil CuidaLocal após baseline: 0 aberturas, 0 cópias de Pix, 0 cliques em ZIP e 0 cliques em APK. Os 2 cliques brutos de APK anteriores foram incorporados ao baseline por serem anteriores à campanha verificável.
+- PRs externos: 2 abertos, 0 comentários e 0 revisões no primeiro checkpoint.
+- Leads confirmados: 0. Vendas confirmadas: 0.
+
 ## Canais bloqueados ou não utilizados
 
 - X/Twitter: a ferramenta oficial `xurl` não está instalada nem autenticada neste ambiente; nenhum post foi feito.

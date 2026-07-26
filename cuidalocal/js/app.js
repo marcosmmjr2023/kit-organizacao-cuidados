@@ -6,6 +6,7 @@ import {
   calculateExpenseSummary,
   collectionToCsv,
   CSV_FIELDS,
+  parseMedicationTimes,
   pruneMedicationRecords,
   upsertMedicationRecord,
 } from './core.mjs';
@@ -83,9 +84,16 @@ function pageHeader(title, copy, button = '') {
   return `<div class="page-header"><div><h2>${esc(title)}</h2><p>${esc(copy)}</p></div>${button}</div>`;
 }
 function getItem(collection, id) { return data.collections[collection].find(item => item.id === id); }
+function removalLabel(collection, item) {
+  const type = ({ agenda: 'o compromisso', medicamentos: 'o medicamento', contatos: 'o contato' })[collection] || 'este registro';
+  const name = String(item?.titulo || item?.nome || '').trim().slice(0, 100);
+  return name ? `${type} “${name}”` : type;
+}
 function removeItem(collection, id) {
-  if (!confirm('Excluir este registro? Esta ação não pode ser desfeita.')) return;
-  data.collections[collection] = data.collections[collection].filter(item => item.id !== id);
+  const item = getItem(collection, id);
+  const label = removalLabel(collection, item);
+  if (!confirm(`Excluir ${label}? Esta ação não pode ser desfeita.`)) return;
+  data.collections[collection] = data.collections[collection].filter(entry => entry.id !== id);
   if (collection === 'medicamentos') data.collections.registrosMedicamentos = data.collections.registrosMedicamentos.filter(item => item.medicamentoId !== id);
   saveData('Registro excluído'); render();
 }
@@ -170,9 +178,9 @@ function renderSimpleDashboard() {
       <p>Escolha uma opção abaixo.<span class="simple-reassurance"> Você pode voltar ao início a qualquer momento.</span></p>
     </section>
     <nav class="simple-action-grid" aria-label="Ações principais da tela simples">
-      <button class="simple-action" data-route-go="agenda"><span class="simple-icon" aria-hidden="true">▣</span><span><strong>Meu dia</strong><small>Ver o que está marcado para hoje</small></span></button>
-      <button class="simple-action" data-route-go="medicamentos"><span class="simple-icon" aria-hidden="true">＋</span><span><strong>Medicamentos</strong><small>Ver informações já cadastradas</small></span></button>
-      <button class="simple-action" data-route-go="contatos"><span class="simple-icon" aria-hidden="true">☎</span><span><strong>Pessoas para ligar</strong><small>Encontrar um contato importante</small></span></button>
+      <button class="simple-action" data-route-go="agenda"><span class="simple-icon" aria-hidden="true">▣</span><span><strong>Meu dia</strong><small>Ver ou cadastrar compromissos</small></span></button>
+      <button class="simple-action" data-route-go="medicamentos"><span class="simple-icon" aria-hidden="true">＋</span><span><strong>Medicamentos</strong><small>Ver ou cadastrar medicamentos</small></span></button>
+      <button class="simple-action" data-route-go="contatos"><span class="simple-icon" aria-hidden="true">☎</span><span><strong>Pessoas para ligar</strong><small>Ligar ou cadastrar contatos</small></span></button>
       <button class="simple-action emergency" data-route-go="emergencia"><span class="simple-icon" aria-hidden="true">!</span><span><strong>Ajuda e emergência</strong><small>Abrir contatos e informações importantes</small></span></button>
     </nav>
     <section class="simple-summary" aria-labelledby="simple-summary-title">
@@ -192,28 +200,31 @@ function renderSimpleAgenda() {
     .sort((a, b) => String(a.hora || '').localeCompare(String(b.hora || '')));
   return `<div class="simple-page">
     <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">▣</span><div><h2>Meu dia</h2><p>Compromissos cadastrados para hoje.</p></div></header>
-    <section class="simple-list" aria-label="Compromissos de hoje">${items.length ? items.map(item => `<article class="simple-list-card"><time>${esc(item.hora || 'Sem horário')}</time><div><h3>${esc(item.titulo)}</h3>${item.local ? `<p>${esc(item.local)}</p>` : ''}<strong class="simple-status">${item.concluido ? 'Concluído' : 'Ainda não concluído'}</strong></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">✓</span><h3>Nada marcado para hoje</h3><p>Você pode ficar tranquilo. Não há compromissos cadastrados nesta data.</p></div>`}</section>
+    <button class="simple-add-button" data-add="agenda"><span aria-hidden="true">＋</span>Cadastrar compromisso</button>
+    <section class="simple-list" aria-label="Compromissos de hoje">${items.length ? items.map(item => `<article class="simple-list-card"><time>${esc(item.hora || 'Sem horário')}</time><div><h3>${esc(item.titulo)}</h3>${item.local ? `<p>${esc(item.local)}</p>` : ''}<strong class="simple-status">${item.concluido ? 'Concluído' : 'Ainda não concluído'}</strong><div class="simple-item-actions"><button aria-label="Editar compromisso ${esc(item.titulo)}" data-edit="agenda:${esc(item.id)}">Editar</button><button class="delete" aria-label="Excluir compromisso ${esc(item.titulo)}" data-delete="agenda:${esc(item.id)}">Excluir</button></div></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">✓</span><h3>Nada marcado para hoje</h3><p>Use o botão “Cadastrar compromisso” para adicionar uma entrada.</p></div>`}</section>
   </div>`;
 }
 
 function renderSimpleMedicamentos() {
-  const overview = buildDailyOverview(data, todayISO());
+  const items = data.collections.medicamentos.slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
   return `<div class="simple-page">
-    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">＋</span><div><h2>Medicamentos</h2><p>Somente informações cadastradas anteriormente por você ou por quem cuida.</p></div></header>
+    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">＋</span><div><h2>Medicamentos</h2><p>Cadastre somente informações recebidas de um profissional.</p></div></header>
+    <button class="simple-add-button" data-add="medicamentos"><span aria-hidden="true">＋</span>Cadastrar medicamento</button>
     <div class="simple-safety" role="note"><strong>Não use esta tela para decidir o que tomar.</strong><span>Se houver dúvida, fale com a pessoa responsável ou com um profissional de saúde.</span></div>
-    <section class="simple-list" aria-label="Horários cadastrados">${overview.medicamentos.length ? overview.medicamentos.map(item => `<article class="simple-list-card medication"><time>${esc(item.hora)}</time><div><h3>${esc(item.nome)}</h3><p>${esc(item.orientacao || 'Orientação não informada. Consulte a pessoa responsável.')}</p><strong class="simple-status">Registro de hoje: ${esc(labelStatus(item.status))}</strong></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">＋</span><h3>Nenhuma informação cadastrada</h3><p>Peça ajuda a uma pessoa responsável para usar a tela completa.</p></div>`}</section>
+    <section class="simple-list" aria-label="Medicamentos cadastrados">${items.length ? items.map(item => `<article class="simple-list-card medication"><span class="simple-medication-icon" aria-hidden="true">＋</span><div><h3>${esc(item.nome)}</h3><p><strong>Horários cadastrados:</strong> ${item.horarios?.length ? item.horarios.map(esc).join(', ') : 'Nenhum horário informado'}</p><p>${esc(item.orientacao || 'Orientação não informada. Consulte a pessoa responsável.')}</p><strong class="simple-status">${item.ativo === false ? 'Cadastro pausado' : 'Cadastro ativo'}</strong><div class="simple-item-actions"><button aria-label="Editar medicamento ${esc(item.nome)}" data-edit="medicamentos:${esc(item.id)}">Editar</button><button class="delete" aria-label="Excluir medicamento ${esc(item.nome)}" data-delete="medicamentos:${esc(item.id)}">Excluir</button></div></div></article>`).join('') : `<div class="simple-empty"><span aria-hidden="true">＋</span><h3>Nenhum medicamento cadastrado</h3><p>Use o botão “Cadastrar medicamento” somente para transcrever uma orientação profissional.</p></div>`}</section>
   </div>`;
 }
 
 function renderSimpleContacts() {
   const items = data.collections.contatos.slice().sort((a, b) => (Number(b.favorito) - Number(a.favorito)) || String(a.nome).localeCompare(String(b.nome)));
   return `<div class="simple-page">
-    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">☎</span><div><h2>Pessoas para ligar</h2><p>Toque no nome para iniciar uma ligação.</p></div></header>
+    <header class="simple-page-header"><span class="simple-page-icon" aria-hidden="true">☎</span><div><h2>Pessoas para ligar</h2><p>Cadastre contatos importantes ou toque em “Ligar”.</p></div></header>
+    <button class="simple-add-button" data-add="contatos"><span aria-hidden="true">＋</span>Cadastrar contato</button>
     ${data.settings.demoLoaded ? '<div class="simple-safety" role="note"><strong>Estes contatos são fictícios.</strong><span>Não é possível ligar usando os dados de demonstração.</span></div>' : ''}
     <section class="simple-contact-list" aria-label="Contatos importantes">${items.length ? items.map(item => {
       const href = data.settings.demoLoaded ? '' : phoneHref(item.telefone);
-      return `<article class="simple-contact-card"><span class="simple-avatar" aria-hidden="true">${esc(initials(item.nome))}</span><div><h3>${esc(item.nome)}</h3><p>${esc(item.relacao || 'Contato importante')}</p><strong>${esc(item.telefone || 'Telefone não informado')}</strong></div>${href ? `<a class="simple-call" href="${esc(href)}" aria-label="Ligar para ${esc(item.nome)}"><span aria-hidden="true">☎</span><span>Ligar</span></a>` : '<span class="simple-call unavailable">Sem ligação</span>'}</article>`;
-    }).join('') : `<div class="simple-empty"><span aria-hidden="true">☎</span><h3>Nenhum contato cadastrado</h3><p>Peça a uma pessoa responsável para cadastrar contatos na tela completa.</p></div>`}</section>
+      return `<article class="simple-contact-card"><span class="simple-avatar" aria-hidden="true">${esc(initials(item.nome))}</span><div><h3>${esc(item.nome)}</h3><p>${esc(item.relacao || 'Contato importante')}</p><strong>${esc(item.telefone || 'Telefone não informado')}</strong><div class="simple-item-actions"><button aria-label="Editar contato ${esc(item.nome)}" data-edit="contatos:${esc(item.id)}">Editar</button><button class="delete" aria-label="Excluir contato ${esc(item.nome)}" data-delete="contatos:${esc(item.id)}">Excluir</button></div></div>${href ? `<a class="simple-call" href="${esc(href)}" aria-label="Ligar para ${esc(item.nome)}"><span aria-hidden="true">☎</span><span>Ligar</span></a>` : '<span class="simple-call unavailable">Sem ligação</span>'}</article>`;
+    }).join('') : `<div class="simple-empty"><span aria-hidden="true">☎</span><h3>Nenhum contato cadastrado</h3><p>Use o botão “Cadastrar contato” para adicionar uma pessoa.</p></div>`}</section>
   </div>`;
 }
 
@@ -300,6 +311,14 @@ const formDefinitions = {
   contatos: { title: 'Contato', fields: [
     ['nome','Nome','text','Ex.: Contato familiar',true], ['relacao','Relação / função','text','Ex.: Familiar ou profissional'], ['telefone','Telefone','tel','(00) 00000-0000'], ['email','E-mail','email','nome@exemplo.com'], ['observacoes','Observações','textarea'], ['favorito','Contato favorito','checkbox'] ] },
 };
+const simpleFormDefinitions = {
+  agenda: { title: 'Compromisso', fields: [
+    ['titulo','O que vai acontecer','text','Ex.: Consulta ou visita',true], ['data','Data','date','',true], ['hora','Horário','time'], ['observacoes','Detalhes (opcional)','textarea','Ex.: endereço ou o que levar'] ] },
+  medicamentos: { title: 'Medicamento', fields: [
+    ['nome','Nome do medicamento','text','Copie o nome da orientação profissional',true], ['horarios','Horários','text','Ex.: 08:00, 20:00',true] ] },
+  contatos: { title: 'Contato', fields: [
+    ['nome','Nome','text','Nome da pessoa',true], ['relacao','Quem é essa pessoa','text','Ex.: filha, vizinho ou médico'], ['telefone','Telefone','tel','(00) 00000-0000',true] ] },
+};
 function fieldHTML([name, label, type, optionsOrPlaceholder = '', required = false], item) {
   const raw = item?.[name];
   if (type === 'checkbox') return `<label class="check-row full"><input type="checkbox" name="${name}" ${raw ? 'checked' : ''}><span><strong>${label}</strong></span></label>`;
@@ -308,15 +327,27 @@ function fieldHTML([name, label, type, optionsOrPlaceholder = '', required = fal
   return `<label class="field"><span>${label}${required?' *':''}</span><input type="${type}" name="${name}" value="${esc(raw ?? (type==='date'?todayISO():''))}" placeholder="${esc(optionsOrPlaceholder)}" ${type==='number'?'min="0" step="0.01"':''} ${required?'required':''}></label>`;
 }
 function openEntityForm(collection, id = '') {
-  const def = formDefinitions[collection]; const item = id ? getItem(collection,id) : null;
-  const defaultItem = collection === 'medicamentos' && !item ? { ativo:true } : item;
+  const def = uiMode === 'simple' && simpleFormDefinitions[collection] ? simpleFormDefinitions[collection] : formDefinitions[collection];
+  const item = id ? getItem(collection,id) : null;
+  const defaultItem = !item && collection === 'agenda' && uiMode === 'simple'
+    ? { data: todayISO() }
+    : collection === 'medicamentos' && !item ? { ativo:true } : item;
   showModal(`<div class="modal-header"><div><h2 id="modal-title">${item?'Editar':'Novo'} ${def.title.toLowerCase()}</h2><p class="modal-subtitle">Os campos com * são obrigatórios.</p></div><button class="icon-button" data-close aria-label="Fechar">×</button></div>${collection==='medicamentos'?'<div class="notice warning" style="margin-bottom:16px">Transcreva somente uma orientação profissional já recebida. O app não valida nem recomenda doses ou horários.</div>':''}<form id="entity-form" data-collection="${collection}" data-id="${esc(id)}"><div class="form-grid">${def.fields.map(field=>fieldHTML(field,defaultItem)).join('')}</div><div class="modal-actions"><button type="button" class="button secondary" data-close>Cancelar</button><button type="submit" class="button primary">Salvar</button></div></form>`);
 }
 function submitEntity(form) {
   const collection = form.dataset.collection; const id = form.dataset.id; const existing = id ? getItem(collection,id) : null;
   const values = Object.fromEntries(new FormData(form).entries());
   form.querySelectorAll('input[type="checkbox"]').forEach(input => values[input.name] = input.checked);
-  if (collection === 'medicamentos') values.horarios = String(values.horarios || '').split(',').map(v=>v.trim()).filter(v=>/^([01]\d|2[0-3]):[0-5]\d$/.test(v));
+  if (collection === 'medicamentos') {
+    const parsed = parseMedicationTimes(values.horarios);
+    if (parsed.invalid.length) {
+      toast(`Use horários no formato 08:00, separados por vírgula. Corrija: ${parsed.invalid.join(', ')}`, true);
+      form.elements.horarios?.focus();
+      return;
+    }
+    values.horarios = parsed.times;
+    if (!existing && values.ativo === undefined) values.ativo = true;
+  }
   if (collection === 'despesas') values.valor = Math.max(0, Number(String(values.valor).replace(',','.')) || 0);
   const item = { ...(existing || {}), ...values, id: existing?.id || uid(), createdAt: existing?.createdAt || nowISO() };
   if (existing) Object.assign(existing,item); else data.collections[collection].push(item);
@@ -341,7 +372,7 @@ function openEmergencyForm() {
   showModal(`<div class="modal-header"><div><h2 id="modal-title">Editar cartão de emergência</h2><p class="modal-subtitle">Inclua somente informações confirmadas.</p></div><button class="icon-button" data-close>×</button></div><form id="emergency-form"><div class="form-grid">${fields.map(f=>fieldHTML(f,e)).join('')}</div><div class="modal-actions"><button type="button" class="button secondary" data-close>Cancelar</button><button class="button primary">Salvar cartão</button></div></form>`);
 }
 function showModal(html) { el('modal').innerHTML=html; el('modal-backdrop').classList.remove('hidden'); setTimeout(()=>el('modal').querySelector('input,select,textarea,button')?.focus(),0); }
-function closeModal() { el('modal-backdrop').classList.add('hidden'); el('modal').innerHTML=''; }
+function closeModal() { el('modal-backdrop').classList.add('hidden'); el('modal').innerHTML=''; main.focus({ preventScroll: true }); }
 
 function loadDemo() {
   const blank=createEmptyData(); const day=todayISO();

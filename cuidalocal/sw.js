@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'cuidalocal-';
-const CACHE = `${CACHE_PREFIX}v2.1.0`;
+const CACHE = `${CACHE_PREFIX}v2.1.1`;
 const APP_SHELL = [
   './',
   './index.html',

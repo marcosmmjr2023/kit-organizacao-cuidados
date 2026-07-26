@@ -14,6 +14,15 @@ const EMERGENCY_FIELDS = ['nome', 'comoChamar', 'dataNascimento', 'tipoSanguineo
 
 const isPlainObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
+export function parseMedicationTimes(value) {
+  const entries = (Array.isArray(value) ? value : String(value || '').split(','))
+    .map(entry => String(entry).trim())
+    .filter(Boolean);
+  const invalid = entries.filter(entry => !/^([01]\d|2[0-3]):[0-5]\d$/.test(entry));
+  const times = [...new Set(entries.filter(entry => /^([01]\d|2[0-3]):[0-5]\d$/.test(entry)))].sort();
+  return { times, invalid };
+}
+
 export function createEmptyData() {
   return {
     meta: { app: 'CuidaLocal', schemaVersion: SCHEMA_VERSION, updatedAt: '' },

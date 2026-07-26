@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#175c4c">
+  <meta name="description" content="Private, offline care organization on your own device.">
+  <meta name="robots" content="noindex,nofollow">
+  <title>CuidaLocal — Care organization</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">C</span><span><strong>CuidaLocal</strong><small>Private care organization</small></span></div>
+      <nav id="main-nav">
+        <button class="nav-item active" data-route="painel"><span aria-hidden="true">⌂</span>Dashboard</button>
+        <button class="nav-item" data-route="agenda"><span aria-hidden="true">□</span>Schedule</button>
+        <button class="nav-item" data-route="medicamentos"><span aria-hidden="true">＋</span>Medicines</button>
+        <button class="nav-item" data-route="diario"><span aria-hidden="true">≡</span>Care journal</button>
+        <button class="nav-item" data-route="despesas"><span aria-hidden="true">$</span>Expenses</button>
+        <button class="nav-item" data-route="contatos"><span aria-hidden="true">○</span>Contacts</button>
+        <button class="nav-item" data-route="emergencia"><span aria-hidden="true">!</span>Emergency card</button>
+        <button class="nav-item" data-route="dados"><span aria-hidden="true">⇩</span>Data and backups</button>
+      </nav>
+      <div class="privacy-note"><strong>Your data stays here.</strong><span>Stored only in this browser.</span><span class="offline-status pending" id="offline-status">Preparing offline</span></div>
+      <p><a class="language-link" href="../cuidalocal/">Português</a></p>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button class="icon-button menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">☰</button>
+        <button class="simple-home-button hidden" id="simple-home" data-action="simple-home" aria-label="Back to home"><span aria-hidden="true">←</span><span>Home</span></button>
+        <div class="topbar-title"><p class="eyebrow" id="today-label"></p><h1 id="page-title">Daily dashboard</h1></div>
+        <div class="top-actions">
+          <span class="save-state" id="save-state" aria-live="polite">Saved on this device</span>
+          <button class="button secondary compact quick-diary" data-action="quick-diary">+ Quick entry</button>
+          <button class="mode-switch" data-ui-mode role="switch" aria-checked="false" aria-label="Turn on simple view">
+            <span class="mode-switch-track" aria-hidden="true"><span></span></span>
+            <span class="mode-switch-copy"><strong>Simple view</strong><small>Off</small></span>
+          </button>
+        </div>
+      </header>
+      <div class="safety-banner" id="safety-banner" role="note"><strong>Organization tool.</strong> It does not replace assessment, guidance, or care from health professionals. In an emergency, contact appropriate local services.</div>
+      <main id="conteudo" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <button class="simple-emergency-shortcut hidden" id="simple-emergency-shortcut" data-route-go="emergencia" aria-label="Open help and emergency">
+    <span aria-hidden="true">!</span><strong>I need help</strong>
+  </button>
+
+  <div class="alarm-dialog-backdrop hidden" id="alarm-dialog"></div>
+  <div class="modal-backdrop hidden" id="modal-backdrop" role="presentation"><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"></section></div>
+
+  <div class="modal-backdrop hidden" id="onboarding" role="presentation">
+    <section class="modal onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="onboarding-brand"><span class="brand-mark large">C</span><span class="badge">PRIVATE • OFFLINE</span></div>
+      <h2 id="onboarding-title">More clarity for caregivers.</h2>
+      <p class="lead">Organize routines, notes, and important information without creating an account or sending data to the internet.</p>
+      <button class="mode-switch onboarding-mode-switch" data-ui-mode role="switch" aria-checked="false" aria-label="Turn on simple view">
+        <span class="mode-switch-track" aria-hidden="true"><span></span></span>
+        <span class="mode-switch-copy"><strong>Simple view</strong><small>Large icons, high contrast, and only essential actions</small></span>
+      </button>
+      <div class="feature-row">
+        <div><span class="feature-icon">✓</span><strong>Works offline</strong><small>After the first visit</small></div>
+        <div><span class="feature-icon">⌂</span><strong>Stays on your device</strong><small>You control the backup</small></div>
+        <div><span class="feature-icon">↗</span><strong>Easy to take with you</strong><small>JSON, CSV, and printing</small></div>
+      </div>
+      <div class="notice warning"><strong>Important</strong><p>CuidaLocal does not diagnose, prescribe, or suggest doses. It does not replace health professionals. Record medicines only according to professional guidance you have already received.</p></div>
+      <label class="check-row"><input type="checkbox" id="onboarding-ack"> <span>I have read and understand the notice above.</span></label>
+      <div class="modal-actions split"><button class="button secondary" id="start-demo" disabled>Explore with sample data</button><button class="button primary" id="start-empty" disabled>Start with no data</button></div>
+      <small class="centered muted">You can delete sample data at any time.</small>
+    </section>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <input type="file" id="backup-file" accept="application/json,.json" hidden>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

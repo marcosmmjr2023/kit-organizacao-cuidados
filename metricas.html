@@ -58,8 +58,9 @@
       <div><strong id="v2-cuidalocal-open">—</strong><br>aberturas do CuidaLocal</div>
       <div><strong id="v2-pix-copy-cuidalocal">—</strong><br>cópias do Pix de R$ 9,90</div>
       <div><strong id="v2-download-click-cuidalocal-zip">—</strong><br>cliques para baixar o ZIP</div>
+      <div><strong id="v2-download-click-cuidalocal-apk">—</strong><br>cliques para baixar o APK</div>
     </div>
-    <p>Contagem de downloads do ZIP do CuidaLocal servidos pelo GitHub: <strong id="cuidalocal-release-download">—</strong>. Clique ou download não comprova pagamento.</p>
+    <p>Downloads servidos após o baseline de publicação: ZIP <strong id="cuidalocal-release-download">—</strong> · APK Android <strong id="cuidalocal-apk-release-download">—</strong>. Os baselines brutos de 1 ZIP e 3 APKs incluem verificações internas e não são apresentados como demanda. Clique ou download não comprova pagamento.</p>
   </section>
 
   <section class="legacy">
@@ -95,9 +96,11 @@
   const counterBase = `https://api.counterapi.dev/v1/${namespace}`;
   const releaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/planilha-v1.0";
   const freeReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/materiais-gratuitos-v1";
-  const cuidalocalReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/cuidalocal-v1.0.0";
+  const cuidalocalReleaseApi = "https://api.github.com/repos/marcosmmjr2023/kit-organizacao-cuidados/releases/tags/cuidalocal-v1.2.0";
   const internalKey = "kit-cuidados-analytics-internal-v2";
   const freeDownloadBaseline = 5;
+  const cuidalocalZipBaseline = 1;
+  const cuidalocalApkBaseline = 3;
   let storageAvailable = true;
 
   function safeLocalGet(key) {
@@ -167,22 +170,26 @@
         readCounter("v2-page-view"), readCounter("v2-session"), readCounter("v2-unique-browser"),
         readCounter("v2-external-view"), readCounter("v2-download-click-spreadsheet"), readCounter("v2-pix-copy"),
         readCounter("v2-cuidalocal-open"), readCounter("v2-pix-copy-cuidalocal"), readCounter("v2-download-click-cuidalocal-zip"),
+        readCounter("v2-download-click-cuidalocal-apk"),
         readCounter("page-view"), readCounter("unique-visitor"), readCounter("external-view"),
         releaseDownloads(releaseApi, "Kit_Organizacao_de_Cuidados.zip"),
         releaseDownloads(freeReleaseApi, "Materiais_Gratuitos_Cuidados.pdf"),
-        releaseDownloads(cuidalocalReleaseApi, "CuidaLocal-v1.0.0.zip"),
+        releaseDownloads(cuidalocalReleaseApi, "CuidaLocal-v1.2.0.zip"),
+        releaseDownloads(cuidalocalReleaseApi, "CuidaLocal-Android-v1.2.0.apk"),
       ]);
       const [
         views, sessions, browsers, external, clicks, pix,
-        cuidalocalOpen, cuidalocalPix, cuidalocalZipClicks,
+        cuidalocalOpen, cuidalocalPix, cuidalocalZipClicks, cuidalocalApkClicks,
         legacyViews, legacyBrowsers, legacyExternal,
-        productDownloads, freeDownloads, cuidalocalDownloads,
+        productDownloads, freeDownloads, cuidalocalDownloads, cuidalocalApkDownloads,
       ] = values;
       setMetric("v2-page-view", views); setMetric("v2-session", sessions); setMetric("v2-unique-browser", browsers);
       setMetric("v2-external-view", external); setMetric("v2-download-click-spreadsheet", clicks);
       setMetric("v2-download-click-spreadsheet-2", clicks); setMetric("v2-pix-copy", pix);
       setMetric("v2-cuidalocal-open", cuidalocalOpen); setMetric("v2-pix-copy-cuidalocal", cuidalocalPix);
-      setMetric("v2-download-click-cuidalocal-zip", cuidalocalZipClicks); setMetric("cuidalocal-release-download", cuidalocalDownloads);
+      setMetric("v2-download-click-cuidalocal-zip", cuidalocalZipClicks); setMetric("v2-download-click-cuidalocal-apk", cuidalocalApkClicks);
+      setMetric("cuidalocal-release-download", Math.max(0, cuidalocalDownloads - cuidalocalZipBaseline));
+      setMetric("cuidalocal-apk-release-download", Math.max(0, cuidalocalApkDownloads - cuidalocalApkBaseline));
       setMetric("release-download", productDownloads); setMetric("free-release-download", Math.max(0, freeDownloads - freeDownloadBaseline));
       setMetric("legacy-page-view", legacyViews); setMetric("legacy-unique-visitor", legacyBrowsers);
       setMetric("legacy-external-view", legacyExternal); setMetric("legacy-free-download", freeDownloads);

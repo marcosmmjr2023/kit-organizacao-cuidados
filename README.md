@@ -7,7 +7,9 @@ Site: https://marcosmmjr2023.github.io/kit-organizacao-cuidados/
 ## Produtos
 
 - **Kit Organização de Cuidados — R$ 1,99:** planilha editável e guia em PDF.
-- **[CuidaLocal — R$ 9,90](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html):** PWA instalável, local-first e disponível offline após o primeiro acesso. Agenda, registros administrativos, despesas, contatos, emergência e backups ficam no navegador.
+- **[CuidaLocal — R$ 9,90](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/cuidalocal.html):** PWA e aplicativo Android local-first, com Tela simples acessível, Tela completa, alarmes em duas camadas, agenda, medicamentos, contatos, emergência e backup local.
+
+As [ações públicas de divulgação do CuidaLocal](DIVULGACAO_CUIDALOCAL.md) são registradas com URL, estado e baseline para não confundir publicação, tráfego, download e venda.
 
 O [painel público de métricas](https://marcosmmjr2023.github.io/kit-organizacao-cuidados/metricas.html) separa pageviews qualificados, sessões aproximadas, navegadores únicos aproximados e visitas externas atribuídas. Navegadores do proprietário/agente podem ser marcados como internos e bots reconhecíveis são filtrados.
 

@@ -144,4 +144,10 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://marcosmmjr2023.github.io/kit-organizacao-cuidados/dividir-cuidados-entre-irmaos-modelo.html</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>
